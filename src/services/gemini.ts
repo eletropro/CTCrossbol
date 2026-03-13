@@ -87,7 +87,23 @@ export async function analyzeElectricalProjectPDF(base64Data: string) {
       ],
       config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    
+    const text = response.text;
+    console.log("Gemini Raw Response:", text);
+    
+    if (!text) return null;
+    
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON Parse Error. Attempting to clean text:", parseError);
+      // Fallback: try to extract JSON if there's markdown around it
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw parseError;
+    }
   } catch (error) {
     console.error("Gemini PDF Error:", error);
     return null;

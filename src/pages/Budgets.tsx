@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
-import { collection, addDoc, query, where, onSnapshot, orderBy, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, orderBy, updateDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Budget, Customer, UserProfile } from '../types';
 import { analyzeElectricalProjectPDF } from '../services/gemini';
@@ -16,7 +16,9 @@ import {
   Upload, 
   X, 
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Edit2,
+  Trash2 as TrashIcon
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -26,6 +28,7 @@ export default function Budgets({ user }: { user: User }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,16 +133,15 @@ export default function Budgets({ user }: { user: User }) {
     if (!customer) return;
 
     const total = items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-
-    await addDoc(collection(db, 'budgets'), {
+    const budgetData = {
       uid: user.uid,
       customerId,
       customerName: customer.name,
       title,
       items,
       totalAmount: total,
-      status: 'pending',
-      date: new Date().toISOString(),
+      status: editingBudget ? editingBudget.status : 'pending',
+      date: editingBudget ? editingBudget.date : new Date().toISOString(),
       projectAnalysis: analysis,
       contractDetails,
       contractText: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS ELÉTRICOS
@@ -166,13 +168,42 @@ ${contractDetails.customClauses}
 Data: ${new Date().toLocaleDateString('pt-BR')}
 __________________________
 Assinatura do Prestador`
-    });
+    };
+
+    if (editingBudget?.id) {
+      await updateDoc(doc(db, 'budgets', editingBudget.id), budgetData);
+    } else {
+      await addDoc(collection(db, 'budgets'), budgetData);
+    }
 
     setShowModal(false);
     resetForm();
   };
 
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
+      await deleteDoc(doc(db, 'budgets', id));
+    }
+  };
+
+  const handleEdit = (budget: Budget) => {
+    setEditingBudget(budget);
+    setCustomerId(budget.customerId);
+    setCustomerSearch(budget.customerName);
+    setTitle(budget.title);
+    setItems(budget.items);
+    setAnalysis(budget.projectAnalysis || null);
+    setContractDetails(budget.contractDetails || {
+      deadline: '15 dias úteis',
+      paymentTerms: '50% entrada, 50% na entrega',
+      warranty: '90 dias para mão de obra',
+      customClauses: profile?.contractClauses || ''
+    });
+    setShowModal(true);
+  };
+
   const resetForm = () => {
+    setEditingBudget(null);
     setCustomerId('');
     setCustomerSearch('');
     setTitle('');
@@ -269,7 +300,16 @@ Assinatura do Prestador`
       doc.text('Assinatura do Prestador', margin, 115);
     }
 
-    doc.save(`${type}_${budget.customerName.replace(/\s/g, '_')}.pdf`);
+    const fileName = `${type}_${budget.customerName.replace(/\s/g, '_')}.pdf`;
+    
+    // For mobile browsers, it's often better to open in a new tab
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } else {
+      doc.save(fileName);
+    }
   };
 
   return (
@@ -279,7 +319,7 @@ Assinatura do Prestador`
           <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Orçamentos</h2>
           <p className="text-zinc-500 text-xs sm:text-sm">Propostas comerciais e contratos profissionais.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
+        <button onClick={() => { resetForm(); setShowModal(true); }} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
           <Plus size={20} /> Novo Orçamento
         </button>
       </header>
@@ -292,15 +332,25 @@ Assinatura do Prestador`
             className="card-saas p-6 space-y-6"
           >
             <div className="flex justify-between items-start">
-              <div>
+              <div className="flex-1">
                 <h3 className="font-bold text-zinc-900 text-lg leading-tight">{b.title}</h3>
                 <p className="text-xs text-zinc-400 mt-1">{b.customerName} • {new Date(b.date).toLocaleDateString('pt-BR')}</p>
               </div>
-              <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                b.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
-                b.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
-              }`}>
-                {b.status === 'approved' ? 'Aprovado' : b.status === 'rejected' ? 'Recusado' : 'Pendente'}
+              <div className="flex flex-col items-end gap-2">
+                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  b.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
+                  b.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                }`}>
+                  {b.status === 'approved' ? 'Aprovado' : b.status === 'rejected' ? 'Recusado' : 'Pendente'}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(b)} className="p-1.5 text-zinc-400 hover:text-brand-600 transition-colors">
+                    <Edit2 size={16} />
+                  </button>
+                  <button onClick={() => b.id && handleDelete(b.id)} className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors">
+                    <TrashIcon size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -348,7 +398,7 @@ Assinatura do Prestador`
             >
               <div className="p-6 sm:p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 sticky top-0 z-20">
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-zinc-900">Novo Orçamento</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-zinc-900">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</h3>
                   <p className="text-xs sm:text-sm text-zinc-500">Preencha os dados ou use a IA para analisar um projeto.</p>
                 </div>
                 <button onClick={() => setShowModal(false)} className="p-2 text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all">
