@@ -336,7 +336,7 @@ Assinatura do Prestador`
         });
 
         autoTable(doc, {
-          startY: 130,
+          startY: 135, // Increased from 130 to give more space
           head: [['Descrição do Serviço / Item', 'Qtd', 'Vlr. Unitário', 'Subtotal']],
           body: tableData,
           theme: 'striped',
@@ -365,7 +365,7 @@ Assinatura do Prestador`
         });
 
         const lastTable = (doc as any).lastAutoTable;
-        const finalY = (lastTable ? lastTable.finalY : 130) + 20;
+        const finalY = (lastTable ? lastTable.finalY : 135) + 20;
         
         // Total Highlight Box (Premium Look)
         doc.setFillColor(15, 23, 42);
@@ -375,15 +375,6 @@ Assinatura do Prestador`
         doc.setTextColor(255, 255, 255);
         doc.text(`VALOR TOTAL: R$ ${safeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, finalY + 1, { align: 'right' });
         
-        // AI Note if applicable
-        if (budget.projectAnalysis?.calculationBasis) {
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'italic');
-          doc.setTextColor(148, 163, 184);
-          const note = 'Nota Técnica: Este orçamento foi elaborado com suporte de análise de inteligência artificial sobre o projeto elétrico fornecido, garantindo precisão técnica nos quantitativos e conformidade com as normas vigentes.';
-          doc.text(doc.splitTextToSize(note, 170), margin, finalY + 30);
-        }
-
         // Signatures Section
         const sigY = pageHeight - 60;
         doc.setFontSize(10);
