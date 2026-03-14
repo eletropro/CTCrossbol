@@ -1,24 +1,46 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
-import { motion } from 'motion/react';
-import { Zap, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Zap, Mail, Lock, ArrowRight, Sparkles, Eye, EyeOff, Key } from 'lucide-react';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setMessage('');
+    setLoading(true);
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    try {
+      await sendPasswordResetEmail(auth, forgotEmail);
+      setMessage('E-mail de redefinição enviado com sucesso!');
+      setTimeout(() => setShowForgotModal(false), 3000);
     } catch (err: any) {
       setError(err.message);
     }
@@ -69,14 +91,32 @@ export default function Login() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 focus:bg-white focus:ring-4 focus:ring-brand-50 focus:border-brand-500 outline-none transition-all text-zinc-900 font-medium"
+                  className="w-full pl-12 pr-12 py-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 focus:bg-white focus:ring-4 focus:ring-brand-50 focus:border-brand-500 outline-none transition-all text-zinc-900 font-medium"
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
+              {isLogin && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[10px] font-bold text-brand-600 hover:text-brand-700 uppercase tracking-wider"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                </div>
+              )}
             </div>
 
             {error && (
@@ -89,12 +129,23 @@ export default function Login() {
               </motion.div>
             )}
 
+            {message && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-xs font-medium"
+              >
+                {message}
+              </motion.div>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-brand-600 text-white font-bold py-5 rounded-2xl hover:bg-brand-700 transition-all shadow-xl shadow-brand-100 flex items-center justify-center gap-3 group"
+              disabled={loading}
+              className="w-full bg-brand-600 text-white font-bold py-5 rounded-2xl hover:bg-brand-700 disabled:opacity-50 transition-all shadow-xl shadow-brand-100 flex items-center justify-center gap-3 group"
             >
-              {isLogin ? 'Acessar Plataforma' : 'Criar Minha Conta'}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? 'Processando...' : (isLogin ? 'Acessar Plataforma' : 'Criar Minha Conta')}
+              {!loading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 
@@ -113,6 +164,60 @@ export default function Login() {
           © 2026 MetaCash • Todos os direitos reservados
         </p>
       </motion.div>
+
+      {/* Forgot Password Modal */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
+                    <Key size={20} />
+                  </div>
+                  <h3 className="text-xl font-bold text-zinc-900">Recuperar Senha</h3>
+                </div>
+                <button onClick={() => setShowForgotModal(false)} className="text-zinc-400 hover:text-zinc-600">
+                  <ArrowRight className="rotate-180" size={24} />
+                </button>
+              </div>
+
+              <p className="text-zinc-500 text-sm mb-6">
+                Insira seu e-mail abaixo para receber um link de redefinição de senha.
+              </p>
+
+              <form onSubmit={handleForgotPassword} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 focus:bg-white outline-none transition-all text-zinc-900 font-medium"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-brand-600 text-white font-bold py-4 rounded-2xl hover:bg-brand-700 transition-all shadow-xl shadow-brand-100"
+                >
+                  Enviar Link de Recuperação
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

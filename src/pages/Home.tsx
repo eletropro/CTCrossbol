@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Transaction } from '../types';
+import { Transaction, UserProfile } from '../types';
 import { getFinancialInsights } from '../services/gemini';
 import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, Wallet, Sparkles, ArrowRight } from 'lucide-react';
@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 
 export default function Home({ user }: { user: User }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [insights, setInsights] = useState<string>('Carregando insights...');
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +34,15 @@ export default function Home({ user }: { user: User }) {
       }
     });
 
+    const fetchProfile = async () => {
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setProfile(docSnap.data() as UserProfile);
+      }
+    };
+    fetchProfile();
+
     return () => unsubscribe();
   }, [user.uid]);
 
@@ -48,7 +58,9 @@ export default function Home({ user }: { user: User }) {
     <div className="space-y-8 max-w-5xl mx-auto">
       <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">Olá, {user.email?.split('@')[0]}</h2>
+          <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">
+            Olá, {profile?.ownerName || user.email?.split('@')[0]}
+          </h2>
           <p className="text-zinc-500 text-sm">Bem-vindo ao seu painel de controle MetaCash.</p>
         </div>
         <div className="hidden sm:block">

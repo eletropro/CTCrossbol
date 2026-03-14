@@ -262,44 +262,56 @@ Assinatura do Prestador`
       }
     };
 
-    // Header
+    // Header Background
     doc.setFillColor(248, 250, 252); // Very light slate
-    doc.rect(0, 0, pageWidth, 45, 'F');
+    doc.rect(0, 0, pageWidth, 50, 'F');
     
-    doc.setFontSize(24);
+    // Logo / Company Name
+    doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(88, 101, 242); // Brand color
-    doc.text(profile?.companyName || 'MetaCash', margin, 25);
+    doc.text(profile?.companyName || 'MetaCash', margin, 28);
     
+    // Company Info (Right Aligned)
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text([
+    const companyInfo = [
       `${profile?.ownerName || 'Profissional Autônomo'}`,
       `Tel: ${profile?.phone || 'Não informado'}`,
       `End: ${profile?.address || 'Não informado'}`
-    ], pageWidth - margin, 20, { align: 'right' });
+    ];
+    doc.text(companyInfo, pageWidth - margin, 22, { align: 'right' });
     
+    // Decorative Line
     doc.setDrawColor(88, 101, 242);
-    doc.setLineWidth(0.5);
-    doc.line(margin, 40, pageWidth - margin, 40);
+    doc.setLineWidth(0.8);
+    doc.line(margin, 42, pageWidth - margin, 42);
 
     if (type === 'budget') {
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 41, 59);
-      doc.text('ORÇAMENTO DE SERVIÇOS', margin, 55);
+      doc.text('ORÇAMENTO DE SERVIÇOS', margin, 65);
+      
+      // Client Info Box
+      doc.setFillColor(252, 252, 252);
+      doc.setDrawColor(240, 240, 240);
+      doc.roundedRect(margin, 75, pageWidth - (margin * 2), 30, 3, 3, 'FD');
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('DADOS DO CLIENTE', margin, 68);
+      doc.setTextColor(88, 101, 242);
+      doc.text('DADOS DO CLIENTE', margin + 5, 82);
+      
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(71, 85, 105);
       doc.text([
         `Cliente: ${budget.customerName}`,
-        `Data: ${new Date(budget.date).toLocaleDateString('pt-BR')}`,
+        `Data de Emissão: ${new Date(budget.date).toLocaleDateString('pt-BR')}`,
         `Referência: ${budget.title}`
-      ], margin, 74);
+      ], margin + 5, 89);
 
       const tableData = budget.items.map(item => [
         item.description,
@@ -309,53 +321,70 @@ Assinatura do Prestador`
       ]);
 
       (doc as any).autoTable({
-        startY: 95,
-        head: [['Descrição do Serviço', 'Qtd', 'Unitário', 'Total']],
+        startY: 115,
+        head: [['Descrição Detalhada do Serviço', 'Qtd', 'Vlr. Unitário', 'Subtotal']],
         body: tableData,
         theme: 'striped',
-        headStyles: { fillColor: [88, 101, 242], fontSize: 10, halign: 'center' },
+        headStyles: { 
+          fillColor: [88, 101, 242], 
+          fontSize: 10, 
+          fontStyle: 'bold',
+          halign: 'center',
+          cellPadding: 4
+        },
         columnStyles: {
           0: { cellWidth: 'auto' },
           1: { halign: 'center', cellWidth: 20 },
           2: { halign: 'right', cellWidth: 35 },
           3: { halign: 'right', cellWidth: 35 }
         },
-        styles: { fontSize: 9, cellPadding: 5 }
+        styles: { 
+          fontSize: 9, 
+          cellPadding: 4,
+          textColor: [51, 65, 85],
+          lineColor: [241, 245, 249]
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        }
       });
 
       const finalY = (doc as any).lastAutoTable.finalY + 15;
       
-      // Total Box
-      doc.setFillColor(248, 250, 252);
-      doc.rect(pageWidth - 85, finalY - 8, 65, 15, 'F');
+      // Total Highlight Box
+      doc.setFillColor(88, 101, 242);
+      doc.roundedRect(pageWidth - 90, finalY - 10, 70, 18, 2, 2, 'F');
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text(`TOTAL: R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth - margin, finalY, { align: 'right' });
+      doc.setTextColor(255, 255, 255);
+      doc.text(`TOTAL: R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, finalY + 2, { align: 'right' });
       
+      // AI Note if applicable
       if (budget.projectAnalysis?.calculationBasis) {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(148, 163, 184);
-        const note = 'Nota: Este orçamento foi gerado com auxílio de inteligência artificial baseada na análise técnica do projeto elétrico fornecido.';
-        doc.text(doc.splitTextToSize(note, 170), margin, finalY + 20);
+        const note = 'Nota Técnica: Este orçamento foi elaborado com suporte de análise de inteligência artificial sobre o projeto elétrico fornecido, garantindo precisão técnica nos quantitativos.';
+        doc.text(doc.splitTextToSize(note, 170), margin, finalY + 25);
       }
 
-      // Signatures
+      // Signatures Section
+      const sigY = pageHeight - 60;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.line(margin, pageHeight - 60, 90, pageHeight - 60);
-      doc.text('Assinatura do Prestador', margin + 35, pageHeight - 55, { align: 'center' });
       
-      doc.line(pageWidth - 90, pageHeight - 60, pageWidth - margin, pageHeight - 60);
-      doc.text('Assinatura do Cliente', pageWidth - margin - 35, pageHeight - 55, { align: 'center' });
+      doc.line(margin, sigY, 90, sigY);
+      doc.text(profile?.companyName || 'Assinatura do Prestador', margin + 35, sigY + 5, { align: 'center' });
+      
+      doc.line(pageWidth - 90, sigY, pageWidth - margin, sigY);
+      doc.text('Assinatura do Cliente', pageWidth - margin - 35, sigY + 5, { align: 'center' });
 
     } else if (type === 'contract') {
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 41, 59);
-      doc.text('CONTRATO DE PRESTAÇÃO DE SERVIÇOS', margin, 55);
+      doc.text('CONTRATO DE PRESTAÇÃO DE SERVIÇOS', margin, 65);
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -385,43 +414,48 @@ __________________________
 Assinatura do Prestador`;
 
       const splitText = doc.splitTextToSize(contractText, pageWidth - (margin * 2));
-      doc.text(splitText, margin, 70, { lineHeightFactor: 1.5 });
+      doc.text(splitText, margin, 80, { lineHeightFactor: 1.6 });
 
     } else {
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 41, 59);
-      doc.text('RECIBO DE PAGAMENTO', margin, 55);
+      doc.text('RECIBO DE PAGAMENTO', margin, 65);
       
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(margin, 65, pageWidth - (margin * 2), 80);
+      // Receipt Frame
+      doc.setDrawColor(226, 232, 240);
+      doc.setFillColor(252, 252, 252);
+      doc.roundedRect(margin, 75, pageWidth - (margin * 2), 90, 4, 4, 'FD');
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(51, 65, 85);
       
-      const receiptText = `Recebemos de ${budget.customerName.toUpperCase()}, a importância de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${type === 'receipt' ? 'Valor por extenso aqui' : ''}), referente aos serviços de ${budget.title.toUpperCase()} realizados conforme orçamento aprovado.
+      const receiptText = `Recebemos de ${budget.customerName.toUpperCase()}, a importância de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} referente à quitação total dos serviços de ${budget.title.toUpperCase()} realizados conforme proposta técnica aprovada.
 
-Damos por este recibo a plena e geral quitação dos valores acima mencionados.`;
+Damos por este recibo a plena e geral quitação dos valores acima mencionados, nada mais havendo a reclamar sobre o objeto deste pagamento.`;
       
-      const splitReceipt = doc.splitTextToSize(receiptText, pageWidth - (margin * 2) - 10);
-      doc.text(splitReceipt, margin + 5, 80, { lineHeightFactor: 1.5 });
+      const splitReceipt = doc.splitTextToSize(receiptText, pageWidth - (margin * 2) - 20);
+      doc.text(splitReceipt, margin + 10, 95, { lineHeightFactor: 1.6 });
       
-      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin + 5, 125);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')}`, margin + 10, 145);
       
-      doc.line(pageWidth / 2 - 40, pageHeight - 80, pageWidth / 2 + 40, pageHeight - 80);
-      doc.text(profile?.companyName || 'Assinatura do Prestador', pageWidth / 2, pageHeight - 75, { align: 'center' });
+      // Signature Line
+      doc.line(pageWidth / 2 - 45, pageHeight - 80, pageWidth / 2 + 45, pageHeight - 80);
+      doc.setFontSize(10);
+      doc.text(profile?.companyName || 'Assinatura do Prestador', pageWidth / 2, pageHeight - 74, { align: 'center' });
     }
 
     addFooter(doc);
 
     const fileName = `${type}_${budget.customerName.replace(/\s/g, '_')}.pdf`;
     
-    // Open in new tab AND download
+    // Generate Blob
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
     
-    // Create a temporary link for downloading
+    // Create download link
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
@@ -429,8 +463,10 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados.`
     link.click();
     document.body.removeChild(link);
     
-    // Open in new tab
-    window.open(url, '_blank');
+    // Open in new tab (with delay to ensure download starts)
+    setTimeout(() => {
+      window.open(url, '_blank');
+    }, 100);
   };
 
   return (
