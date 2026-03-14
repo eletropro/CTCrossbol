@@ -336,7 +336,7 @@ Assinatura do Prestador`
         });
 
         autoTable(doc, {
-          startY: 135, // Increased from 130 to give more space
+          startY: 135,
           head: [['Descrição do Serviço / Item', 'Qtd', 'Vlr. Unitário', 'Subtotal']],
           body: tableData,
           theme: 'striped',
@@ -364,9 +364,18 @@ Assinatura do Prestador`
           }
         });
 
-        const lastTable = (doc as any).lastAutoTable;
-        const finalY = (lastTable ? lastTable.finalY : 135) + 20;
+        let finalY = (doc as any).lastAutoTable?.finalY || 135;
         
+        // Check if we need a new page for the total and signatures
+        // Signature starts at pageHeight - 60. Total box is ~20px high.
+        // We want at least 40px space between total and signatures.
+        if (finalY > pageHeight - 100) {
+          doc.addPage();
+          finalY = 30; // Start near top of new page
+        } else {
+          finalY += 20;
+        }
+
         // Total Highlight Box (Premium Look)
         doc.setFillColor(15, 23, 42);
         doc.roundedRect(pageWidth - 95, finalY - 12, 75, 20, 2, 2, 'F');
