@@ -174,13 +174,31 @@ export default function Profile({ user }: { user: User }) {
     setCalcError(null);
     setCalculating(true);
     try {
+      let currentOriginCoords = originCoords;
+      if (!currentOriginCoords && profile.address) {
+        const res = await searchAddress(profile.address);
+        if (res.coords) {
+          currentOriginCoords = res.coords;
+          setOriginCoords(res.coords);
+        }
+      }
+
+      let currentDestCoords = destCoords;
+      if (!currentDestCoords && destination) {
+        const res = await searchAddress(destination);
+        if (res.coords) {
+          currentDestCoords = res.coords;
+          setDestCoords(res.coords);
+        }
+      }
+
       const res = await calculateRoute(
         profile.address,
         destination,
         profile.fuelPrice || 0,
         profile.fuelConsumption || 1,
-        originCoords || undefined,
-        destCoords || undefined
+        currentOriginCoords || undefined,
+        currentDestCoords || undefined
       );
       
       if (res.distanceKm === 0) {

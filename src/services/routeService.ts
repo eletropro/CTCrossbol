@@ -26,14 +26,15 @@ export async function calculateRoute(
   const originStr = originCoords ? `${originCoords[0]}, ${originCoords[1]}` : origin;
   const destStr = destCoords ? `${destCoords[0]}, ${destCoords[1]}` : destination;
 
-  const prompt = `Calcule a distância de condução e o tempo de viagem entre:
-  ORIGEM: ${originStr}
-  DESTINO: ${destStr}
+  // Prompt mais direto e imperativo
+  const prompt = `GPS: Calcule a distância de condução entre estas coordenadas/endereços.
+  DE: ${originStr}
+  PARA: ${destStr}
   
-  Use o Google Maps para encontrar a rota real.
-  Responda no formato:
-  Distância: [valor] km
-  Tempo: [valor]`;
+  Use obrigatoriamente a ferramenta Google Maps.
+  Responda EXATAMENTE neste formato:
+  DISTANCIA: [valor numérico] km
+  TEMPO: [texto do tempo]`;
 
   try {
     const response = await ai.models.generateContent({
@@ -41,28 +42,33 @@ export async function calculateRoute(
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
+        temperature: 0, // Mais determinístico
       },
     });
 
     const text = response.text || '';
-    const distanceMatch = text.match(/Distância:\s*([\d.,]+)\s*km/i);
-    const durationMatch = text.match(/Tempo:\s*([^\n]+)/i);
+    console.log("Resposta do GPS:", text);
+
+    // Regex mais flexível para capturar números com vírgula ou ponto
+    const distanceMatch = text.match(/DISTANCIA:\s*([\d.,]+)\s*km/i);
+    const durationMatch = text.match(/TEMPO:\s*([^\n|]+)/i);
     
     let distance = 0;
     if (distanceMatch) {
-      distance = parseFloat(distanceMatch[1].replace(',', '.'));
+      // Converte vírgula em ponto para o parseFloat
+      const distStr = distanceMatch[1].replace(',', '.');
+      distance = parseFloat(distStr);
     }
 
+    // Tenta extrair URL dos grounding chunks
     let mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}`;
-    let finalOriginCoords = originCoords;
-    let finalDestCoords = destCoords;
-
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
       for (const chunk of chunks) {
-        if (chunk.maps?.uri) mapsUrl = chunk.maps.uri;
-        // Note: groundingChunks usually don't have lat/lng directly, 
-        // but the model might have them in the text if we ask.
+        if (chunk.maps?.uri) {
+          mapsUrl = chunk.maps.uri;
+          break;
+        }
       }
     }
 
@@ -75,14 +81,14 @@ export async function calculateRoute(
       durationText: durationMatch ? durationMatch[1].trim() : "N/A",
       fuelCost: cost,
       mapsUrl: mapsUrl,
-      originCoords: finalOriginCoords,
-      destCoords: finalDestCoords
+      originCoords: originCoords,
+      destCoords: destCoords
     };
   } catch (error) {
-    console.error("Erro calculateRoute:", error);
+    console.error("Erro crítico calculateRoute:", error);
     return {
       distanceKm: 0,
-      durationText: "Erro",
+      durationText: "Erro de conexão",
       fuelCost: 0,
       mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
     };
