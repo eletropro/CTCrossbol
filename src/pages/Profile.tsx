@@ -14,7 +14,8 @@ export default function Profile({ user }: { user: User }) {
     email: user.email || '',
     phone: '',
     address: '',
-    contractClauses: ''
+    contractClauses: '',
+    monthlyGoal: 10000
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,8 +48,8 @@ export default function Profile({ user }: { user: User }) {
     <div className="space-y-6 max-w-4xl mx-auto pb-10 sm:pb-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Configurações</h2>
-          <p className="text-zinc-500 text-xs sm:text-sm">Personalize sua empresa e documentos.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Configurações</h2>
+          <p className="text-zinc-400 text-xs sm:text-sm">Personalize sua empresa e documentos.</p>
         </div>
         {showSuccess && (
           <motion.div
@@ -64,8 +65,8 @@ export default function Profile({ user }: { user: User }) {
       <form onSubmit={handleSave} className="space-y-6 sm:space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
           <div className="card-saas p-6 sm:p-8 space-y-6">
-            <div className="flex items-center gap-3 text-brand-600 font-bold text-sm mb-2">
-              <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
                 <Building size={20} />
               </div>
               Dados da Empresa
@@ -73,7 +74,7 @@ export default function Profile({ user }: { user: User }) {
             
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Nome da Empresa</label>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Nome da Empresa</label>
                 <input
                   type="text"
                   value={profile.companyName}
@@ -84,7 +85,7 @@ export default function Profile({ user }: { user: User }) {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Nome do Responsável</label>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Nome do Responsável</label>
                 <input
                   type="text"
                   value={profile.ownerName}
@@ -94,12 +95,23 @@ export default function Profile({ user }: { user: User }) {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Meta de Faturamento Mensal (R$)</label>
+                <input
+                  type="number"
+                  value={profile.monthlyGoal || ''}
+                  onChange={(e) => setProfile({ ...profile, monthlyGoal: parseFloat(e.target.value) })}
+                  className="input-saas"
+                  placeholder="Ex: 10000"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1">Esta meta será exibida no seu Dashboard principal.</p>
+              </div>
             </div>
           </div>
 
           <div className="card-saas p-6 sm:p-8 space-y-6">
-            <div className="flex items-center gap-3 text-brand-600 font-bold text-sm mb-2">
-              <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
                 <Phone size={20} />
               </div>
               Contato e Localização
@@ -107,7 +119,7 @@ export default function Profile({ user }: { user: User }) {
             
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">WhatsApp Business</label>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">WhatsApp Business</label>
                 <input
                   type="tel"
                   value={profile.phone}
@@ -117,7 +129,7 @@ export default function Profile({ user }: { user: User }) {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Endereço Fiscal</label>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço Fiscal</label>
                 <input
                   type="text"
                   value={profile.address}
@@ -131,8 +143,8 @@ export default function Profile({ user }: { user: User }) {
         </div>
 
         <div className="card-saas p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 text-brand-600 font-bold text-sm mb-2">
-            <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
               <FileText size={20} />
             </div>
             Cláusulas e Termos do Contrato
@@ -143,7 +155,7 @@ export default function Profile({ user }: { user: User }) {
             className="input-saas min-h-[200px] py-3"
             placeholder="Digite aqui as cláusulas que serão impressas nos seus contratos em PDF..."
           />
-          <p className="text-[10px] text-zinc-400 italic">Essas cláusulas serão incluídas automaticamente na geração de contratos PDF.</p>
+          <p className="text-[10px] text-zinc-500 italic">Essas cláusulas serão incluídas automaticamente na geração de contratos PDF.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -158,7 +170,7 @@ export default function Profile({ user }: { user: User }) {
           <button
             type="button"
             onClick={() => auth.signOut()}
-            className="w-full sm:w-48 bg-rose-50 text-rose-600 font-bold py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-rose-100 active:scale-95 transition-all border border-rose-100"
+            className="w-full sm:w-48 bg-rose-500/10 text-rose-500 font-bold py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-rose-500/20 active:scale-95 transition-all border border-rose-500/20"
           >
             <LogOut size={20} /> Sair
           </button>

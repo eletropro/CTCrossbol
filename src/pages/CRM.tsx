@@ -106,8 +106,8 @@ export default function CRM({ user }: { user: User }) {
     <div className="space-y-6 max-w-5xl mx-auto pb-10 sm:pb-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Relacionamento</h2>
-          <p className="text-zinc-500 text-xs sm:text-sm">Gerencie sua base de clientes e histórico de vendas.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Relacionamento</h2>
+          <p className="text-zinc-400 text-xs sm:text-sm">Gerencie sua base de clientes e histórico de vendas.</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
           <Plus size={20} /> Novo Cliente
@@ -123,27 +123,27 @@ export default function CRM({ user }: { user: User }) {
           >
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center">
                   <UserIcon size={24} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-zinc-900 leading-tight">{c.name}</h3>
+                  <h3 className="font-bold text-white leading-tight">{c.name}</h3>
                   <p className="text-xs text-zinc-400">{c.phone}</p>
                 </div>
               </div>
-              <button onClick={() => c.id && deleteDoc(doc(db, 'customers', c.id))} className="text-zinc-300 hover:text-red-500 transition-colors">
+              <button onClick={() => c.id && deleteDoc(doc(db, 'customers', c.id))} className="text-zinc-600 hover:text-red-500 transition-colors">
                 <Trash2 size={18} />
               </button>
             </div>
 
             <div className="space-y-2 mb-6 flex-1">
               {c.cpf && (
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <CreditCard size={14} /> {c.cpf}
                 </div>
               )}
               {c.address && (
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <MapPin size={14} /> {c.address}
                 </div>
               )}
@@ -162,12 +162,12 @@ export default function CRM({ user }: { user: User }) {
                   disabled={loadingAI !== null}
                   className={`flex-1 text-[10px] font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all ${
                     loadingAI === `${c.id}-convince` 
-                      ? 'bg-brand-100 text-brand-400 cursor-wait' 
-                      : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
+                      ? 'bg-emerald-500/20 text-emerald-400 cursor-wait' 
+                      : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
                   }`}
                 >
                   {loadingAI === `${c.id}-convince` ? (
-                    <div className="w-3 h-3 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <Sparkles size={14} />
                   )}
@@ -178,12 +178,12 @@ export default function CRM({ user }: { user: User }) {
                   disabled={loadingAI !== null}
                   className={`flex-1 text-[10px] font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all ${
                     loadingAI === `${c.id}-thank` 
-                      ? 'bg-zinc-100 text-zinc-400 cursor-wait' 
-                      : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                      ? 'bg-zinc-800 text-zinc-500 cursor-wait' 
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
                   {loadingAI === `${c.id}-thank` ? (
-                    <div className="w-3 h-3 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <MessageSquare size={14} />
                   )}
@@ -204,35 +204,35 @@ export default function CRM({ user }: { user: User }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-white w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+              className="bg-zinc-900 w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-zinc-800"
             >
-              <div className="p-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 sticky top-0 z-10">
+              <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900 sticky top-0 z-10">
                 <div>
-                  <h3 className="text-xl font-bold text-zinc-900">Histórico: {selectedCustomer.name}</h3>
-                  <p className="text-xs text-zinc-500">Todos os orçamentos e serviços realizados.</p>
+                  <h3 className="text-xl font-bold text-white">Histórico: {selectedCustomer.name}</h3>
+                  <p className="text-xs text-zinc-400">Todos os orçamentos e serviços realizados.</p>
                 </div>
-                <button onClick={() => setSelectedCustomer(null)} className="p-2 text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all">
+                <button onClick={() => setSelectedCustomer(null)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={24} />
                 </button>
               </div>
               <div className="p-6 overflow-y-auto space-y-4 no-scrollbar">
                 {getCustomerHistory(selectedCustomer.id!).length > 0 ? (
                   getCustomerHistory(selectedCustomer.id!).map(b => (
-                    <div key={b.id} className="p-4 rounded-2xl border border-zinc-100 flex justify-between items-center">
+                    <div key={b.id} className="p-4 rounded-2xl border border-zinc-800 bg-zinc-800/50 flex justify-between items-center">
                       <div>
-                        <p className="font-bold text-zinc-900">{b.title}</p>
-                        <p className="text-xs text-zinc-400">{new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                        <p className="font-bold text-white">{b.title}</p>
+                        <p className="text-xs text-zinc-500">{new Date(b.date).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-brand-600">R$ {b.totalAmount.toLocaleString('pt-BR')}</p>
-                        <span className={`text-[10px] font-bold uppercase ${b.status === 'approved' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <p className="font-bold text-emerald-500">R$ {b.totalAmount.toLocaleString('pt-BR')}</p>
+                        <span className={`text-[10px] font-bold uppercase ${b.status === 'approved' ? 'text-emerald-500' : 'text-amber-500'}`}>
                           {b.status}
                         </span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-zinc-400 py-10">Nenhum registro encontrado para este cliente.</p>
+                  <p className="text-center text-zinc-500 py-10">Nenhum registro encontrado para este cliente.</p>
                 )}
               </div>
             </motion.div>
@@ -249,11 +249,11 @@ export default function CRM({ user }: { user: User }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl max-h-[95vh] overflow-y-auto no-scrollbar"
+              className="bg-zinc-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl max-h-[95vh] overflow-y-auto no-scrollbar border border-zinc-800"
             >
-              <div className="flex justify-between items-center mb-8 sticky top-0 bg-white z-10 pb-2">
-                <h3 className="text-2xl font-bold text-zinc-900">Novo Cliente</h3>
-                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all">
+              <div className="flex justify-between items-center mb-8 sticky top-0 bg-zinc-900 z-10 pb-2">
+                <h3 className="text-2xl font-bold text-white">Novo Cliente</h3>
+                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={24} />
                 </button>
               </div>

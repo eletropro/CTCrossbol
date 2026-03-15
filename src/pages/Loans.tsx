@@ -59,8 +59,8 @@ export default function Loans({ user }: { user: User }) {
     <div className="space-y-6 max-w-5xl mx-auto pb-10 sm:pb-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Empréstimos</h2>
-          <p className="text-zinc-500 text-xs sm:text-sm">Gestão de capital e juros ativos.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Empréstimos</h2>
+          <p className="text-zinc-400 text-xs sm:text-sm">Gestão de capital e juros ativos.</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
           <Plus size={20} /> Novo Empréstimo
@@ -76,35 +76,35 @@ export default function Loans({ user }: { user: User }) {
           >
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-amber-50 rounded-[1.25rem] flex items-center justify-center text-amber-600">
+                <div className="w-14 h-14 bg-amber-500/10 rounded-[1.25rem] flex items-center justify-center text-amber-500">
                   <Landmark size={28} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-zinc-900 leading-tight">{l.borrowerName}</h3>
-                  <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest mt-1">
+                  <h3 className="text-xl font-bold text-white leading-tight">{l.borrowerName}</h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">
                     {l.type === 'interest_only' ? 'Apenas Juros' : 'Juros + Capital'}
                   </p>
                 </div>
               </div>
-              <button onClick={() => l.id && deleteDoc(doc(db, 'loans', l.id))} className="text-zinc-300 hover:text-rose-500 transition-colors">
+              <button onClick={() => l.id && deleteDoc(doc(db, 'loans', l.id))} className="text-zinc-600 hover:text-rose-500 transition-colors">
                 <Trash2 size={20} />
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
-                <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-widest mb-1">Principal</p>
-                <p className="text-lg font-bold text-zinc-900">R$ {l.principal.toLocaleString('pt-BR')}</p>
+              <div className="bg-zinc-800/50 p-4 rounded-2xl border border-zinc-700">
+                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Principal</p>
+                <p className="text-lg font-bold text-white">R$ {l.principal.toLocaleString('pt-BR')}</p>
               </div>
-              <div className="bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
-                <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-widest mb-1">Taxa Mensal</p>
-                <p className="text-lg font-bold text-zinc-900">{l.interestRate}%</p>
+              <div className="bg-zinc-800/50 p-4 rounded-2xl border border-zinc-700">
+                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Taxa Mensal</p>
+                <p className="text-lg font-bold text-white">{l.interestRate}%</p>
               </div>
             </div>
 
-            <div className="bg-brand-600 p-6 rounded-3xl text-white shadow-xl shadow-brand-100 flex justify-between items-center relative overflow-hidden">
+            <div className="bg-emerald-600 p-6 rounded-3xl text-white shadow-xl shadow-emerald-900/20 flex justify-between items-center relative overflow-hidden">
               <div className="relative z-10">
-                <p className="text-brand-100 text-[10px] uppercase font-bold tracking-widest mb-1">Pagamento Mensal</p>
+                <p className="text-emerald-100 text-[10px] uppercase font-bold tracking-widest mb-1">Pagamento Mensal</p>
                 <p className="text-3xl font-bold">
                   R$ {calculateMonthly(l.principal, l.interestRate, l.type).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
@@ -115,11 +115,11 @@ export default function Loans({ user }: { user: User }) {
         ))}
         {loans.length === 0 && (
           <div className="md:col-span-2 card-saas p-20 text-center">
-            <div className="bg-zinc-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Calculator className="text-zinc-300" size={40} />
+            <div className="bg-zinc-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calculator className="text-zinc-600" size={40} />
             </div>
-            <h4 className="text-xl font-bold text-zinc-900 mb-2">Nenhum empréstimo ativo</h4>
-            <p className="text-zinc-400 max-w-xs mx-auto">Comece a gerenciar seus empréstimos e juros clicando no botão acima.</p>
+            <h4 className="text-xl font-bold text-white mb-2">Nenhum empréstimo ativo</h4>
+            <p className="text-zinc-500 max-w-xs mx-auto">Comece a gerenciar seus empréstimos e juros clicando no botão acima.</p>
           </div>
         )}
       </div>
@@ -132,18 +132,18 @@ export default function Loans({ user }: { user: User }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto no-scrollbar"
+              className="bg-zinc-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto no-scrollbar border border-zinc-800"
             >
-              <div className="p-6 sm:p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 sticky top-0 z-10">
-                <h3 className="text-xl sm:text-2xl font-bold text-zinc-900">Novo Empréstimo</h3>
-                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all">
+              <div className="p-6 sm:p-8 border-b border-zinc-800 flex justify-between items-center bg-zinc-900 sticky top-0 z-10">
+                <h3 className="text-xl sm:text-2xl font-bold text-white">Novo Empréstimo</h3>
+                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={28} />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Nome do Devedor</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Nome do Devedor</label>
                   <input
                     type="text"
                     value={borrowerName}
@@ -155,7 +155,7 @@ export default function Loans({ user }: { user: User }) {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Valor Principal</label>
+                    <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Valor Principal</label>
                     <input
                       type="number"
                       value={principal}
@@ -166,7 +166,7 @@ export default function Loans({ user }: { user: User }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Juros Mensal (%)</label>
+                    <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Juros Mensal (%)</label>
                     <input
                       type="number"
                       value={interestRate}
@@ -178,11 +178,11 @@ export default function Loans({ user }: { user: User }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Tipo de Pagamento</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Tipo de Pagamento</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
-                    className="input-saas bg-white"
+                    className="input-saas bg-zinc-800"
                   >
                     <option value="interest_only">Apenas Juros</option>
                     <option value="principal_interest">Juros + Capital (Amortização)</option>
