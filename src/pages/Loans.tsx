@@ -14,6 +14,7 @@ export default function Loans({ user }: { user: User }) {
   const [manageAmount, setManageAmount] = useState('');
   const [manageDate, setManageDate] = useState(new Date().toISOString().split('T')[0]);
   const [loanTransactions, setLoanTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
   // Calculator state
   const [customerSearch, setCustomerSearch] = useState('');
@@ -69,47 +70,70 @@ export default function Loans({ user }: { user: User }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
-    let finalCustomerId = customerId;
-    let finalCustomerName = borrowerName || customerSearch;
+    try {
+      let finalCustomerId = customerId;
+      let finalCustomerName = borrowerName || customerSearch;
 
-    // Grouping by phone logic
-    if (!finalCustomerId && customerPhone) {
-      const existingCustomer = customers.find(c => c.phone.replace(/\D/g, '') === customerPhone.replace(/\D/g, ''));
-      if (existingCustomer) {
-        finalCustomerId = existingCustomer.id!;
-        finalCustomerName = existingCustomer.name;
-      } else {
-        // Create new customer if phone doesn't exist
-        const docRef = await addDoc(collection(db, 'customers'), {
-          uid: user.uid,
-          name: finalCustomerName,
-          phone: customerPhone,
-          email: '',
-          notes: 'Criado via Empréstimo',
-          lastInteraction: new Date().toISOString()
-        });
-        finalCustomerId = docRef.id;
+      if (!finalCustomerName) {
+        alert('Por favor, informe o nome do cliente.');
+        setLoading(false);
+        return;
       }
-    }
 
-    await addDoc(collection(db, 'loans'), {
-      uid: user.uid,
-      customerId: finalCustomerId || undefined,
-      customerName: finalCustomerName,
-      borrowerName: finalCustomerName,
-      principal: parseFloat(principal),
-      paidPrincipal: 0,
-      interestRate: parseFloat(interestRate),
-      type,
-      installments: installments ? parseInt(installments) : undefined,
-      paymentDay: parseInt(paymentDay),
-      startDate: new Date(startDate).toISOString(),
-      notes,
-      status: 'active'
-    });
-    setShowModal(false);
-    resetForm();
+      // Grouping by phone logic
+      if (!finalCustomerId && customerPhone) {
+        const existingCustomer = customers.find(c => c.phone.replace(/\D/g, '') === customerPhone.replace(/\D/g, ''));
+        if (existingCustomer) {
+          finalCustomerId = existingCustomer.id!;
+          finalCustomerName = existingCustomer.name;
+        } else {
+          // Create new customer if phone doesn't exist
+          const docRef = await addDoc(collection(db, 'customers'), {
+            uid: user.uid,
+            name: finalCustomerName,
+            phone: customerPhone,
+            email: '',
+            notes: 'Criado via Empréstimo',
+            lastInteraction: new Date().toISOString()
+          });
+          finalCustomerId = docRef.id;
+        }
+      }
+
+      const principalVal = parseFloat(principal);
+      const interestRateVal = parseFloat(interestRate);
+
+      if (isNaN(principalVal) || isNaN(interestRateVal)) {
+        alert('Por favor, informe valores válidos para o principal e juros.');
+        setLoading(false);
+        return;
+      }
+
+      await addDoc(collection(db, 'loans'), {
+        uid: user.uid,
+        customerId: finalCustomerId || undefined,
+        customerName: finalCustomerName,
+        borrowerName: finalCustomerName,
+        principal: principalVal,
+        paidPrincipal: 0,
+        interestRate: interestRateVal,
+        type,
+        installments: installments ? parseInt(installments) : undefined,
+        paymentDay: parseInt(paymentDay),
+        startDate: new Date(startDate).toISOString(),
+        notes,
+        status: 'active'
+      });
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error adding loan:", error);
+      alert('Erro ao salvar empréstimo. Verifique os dados e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -613,8 +637,8 @@ export default function Loans({ user }: { user: User }) {
                   />
                 </div>
 
-                <button type="submit" className="w-full btn-primary py-4 text-lg mt-4">
-                  Salvar Empréstimo
+                <button type="submit" disabled={loading} className="w-full btn-primary py-4 text-lg mt-4 disabled:opacity-50">
+                  {loading ? 'Salvando...' : 'Salvar Empréstimo'}
                 </button>
               </form>
             </motion.div>
