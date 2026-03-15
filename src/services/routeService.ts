@@ -27,12 +27,12 @@ export async function calculateRoute(
   const originStr = originCoords ? `${originCoords[0]}, ${originCoords[1]}` : origin;
   const destStr = destCoords ? `${destCoords[0]}, ${destCoords[1]}` : destination;
 
-  const prompt = `Pesquise no Google Maps a rota de carro entre:
-  ORIGEM: ${originStr}
-  DESTINO: ${destStr}
+  const prompt = `GPS: Forneça a distância de condução (carro) entre:
+  A: ${originStr}
+  B: ${destStr}
   
-  Responda com a distância total em quilômetros (km) e o tempo de viagem.
-  Exemplo de resposta: "A distância é 15.5 km e o tempo é 20 min"`;
+  Use o Google Maps. Responda APENAS com a distância em km e o tempo.
+  Exemplo: 12.5 km, 20 min`;
 
   try {
     const response = await ai.models.generateContent({
@@ -40,27 +40,35 @@ export async function calculateRoute(
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
-        temperature: 0.2,
+        temperature: 0,
       },
     });
 
     const text = response.text || '';
-    console.log("GPS Response:", text);
+    console.log("GPS Raw:", text);
 
-    // Regex ultra-abrangente
-    // Pega números como 10, 10.5, 10,5 seguidos de km ou quilômetros
-    const distanceMatch = text.match(/(\d+[.,]?\d*)\s*(km|quil[ôo]metros)/i);
-    const durationMatch = text.match(/(\d+)\s*(min|hora|hr|h|seg)/i);
+    // Regex para pegar o primeiro número que parece uma distância
+    const distanceMatch = text.match(/([\d.,]+)\s*km/i);
+    const durationMatch = text.match(/(\d+)\s*(min|hora|hr|h)/i);
     
     let distance = 0;
     if (distanceMatch) {
-      distance = parseFloat(distanceMatch[1].replace(',', '.'));
-    } else {
-      // Fallback: procura qualquer número que venha antes de "km" no texto todo
-      const fallbackMatch = text.toLowerCase().match(/([\d.,]+)\s*km/);
-      if (fallbackMatch) {
-        distance = parseFloat(fallbackMatch[1].replace(',', '.'));
-      }
+      distance = parseFloat(distanceMatch[1].replace(/\./g, '').replace(',', '.'));
+    }
+
+    // Se falhar o GPS, mas tivermos coordenadas, podemos tentar uma estimativa básica
+    if (distance === 0 && originCoords && destCoords) {
+      // Haversine formula for a rough estimate if tool fails
+      const R = 6371; // Earth radius in km
+      const dLat = (destCoords[0] - originCoords[0]) * Math.PI / 180;
+      const dLon = (destCoords[1] - originCoords[1]) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(originCoords[0] * Math.PI / 180) * Math.cos(destCoords[0] * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const directDist = R * c;
+      distance = parseFloat((directDist * 1.3).toFixed(1)); // 30% more for road distance
+      console.log("Fallback distance used:", distance);
     }
 
     let mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}`;
@@ -77,7 +85,7 @@ export async function calculateRoute(
 
     return {
       distanceKm: distance,
-      durationText: durationMatch ? durationMatch[0] : "Ver mapa",
+      durationText: durationMatch ? durationMatch[0] : (distance > 0 ? "Estimado" : "N/A"),
       fuelCost: cost,
       mapsUrl: mapsUrl,
       originCoords: originCoords,

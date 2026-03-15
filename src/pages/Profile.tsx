@@ -63,11 +63,24 @@ export default function Profile({ user }: { user: User }) {
   const [calcError, setCalcError] = useState<string | null>(null);
   
   // Map State
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-23.5505, -46.6333]); // Default SP
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-15.7942, -47.8822]); // Default Brasília
   const [originCoords, setOriginCoords] = useState<[number, number] | null>(null);
   const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
 
   useEffect(() => {
+    // Try to get user's current location for better map start
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter([latitude, longitude]);
+        },
+        (error) => {
+          console.log("Geolocation error:", error);
+        }
+      );
+    }
+
     const fetchProfile = async () => {
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
@@ -92,10 +105,23 @@ export default function Profile({ user }: { user: User }) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await setDoc(doc(db, 'users', user.uid), profile);
-    setSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      await setDoc(doc(db, 'users', user.uid), profile);
+      // After saving, try to update origin coords if address changed
+      if (profile.address) {
+        const res = await searchAddress(profile.address);
+        if (res.coords) {
+          setOriginCoords(res.coords);
+          setMapCenter(res.coords);
+        }
+      }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSearchOrigin = async () => {
