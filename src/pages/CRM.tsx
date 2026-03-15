@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Budget, Loan } from '../types';
 import { generateCRMMessage } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
@@ -25,25 +25,28 @@ export default function CRM({ user }: { user: User }) {
   const [loadingAI, setLoadingAI] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'customers'), where('uid', '==', user.uid), orderBy('name', 'asc'));
+    const customersPath = 'customers';
+    const q = query(collection(db, customersPath), where('uid', '==', user.uid), orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
     }, (error) => {
-      console.error('Customers Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, customersPath);
     });
 
-    const qBudgets = query(collection(db, 'budgets'), where('uid', '==', user.uid));
+    const budgetsPath = 'budgets';
+    const qBudgets = query(collection(db, budgetsPath), where('uid', '==', user.uid));
     const unsubscribeBudgets = onSnapshot(qBudgets, (snapshot) => {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
     }, (error) => {
-      console.error('Budgets Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, budgetsPath);
     });
 
-    const qLoans = query(collection(db, 'loans'), where('uid', '==', user.uid));
+    const loansPath = 'loans';
+    const qLoans = query(collection(db, loansPath), where('uid', '==', user.uid));
     const unsubscribeLoans = onSnapshot(qLoans, (snapshot) => {
       setLoans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Loan)));
     }, (error) => {
-      console.error('Loans Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, loansPath);
     });
 
     return () => {
@@ -52,6 +55,12 @@ export default function CRM({ user }: { user: User }) {
       unsubscribeLoans();
     };
   }, [user.uid]);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +78,7 @@ export default function CRM({ user }: { user: User }) {
       setShowModal(false);
       resetForm();
     } catch (error) {
-      console.error("Error saving customer:", error);
-      alert('Erro ao salvar cliente.');
+      handleFirestoreError(error, OperationType.WRITE, 'customers');
     }
   };
 
@@ -274,7 +282,7 @@ export default function CRM({ user }: { user: User }) {
                         <div>
                           <p className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest mb-1">Serviço/Orçamento</p>
                           <p className="font-bold text-white">{b.title}</p>
-                          <p className="text-xs text-zinc-500">{new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                          <p className="text-xs text-zinc-500">{formatDate(b.date)}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-emerald-500">R$ {b.totalAmount.toLocaleString('pt-BR')}</p>
@@ -289,7 +297,7 @@ export default function CRM({ user }: { user: User }) {
                         <div>
                           <p className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-1">Empréstimo</p>
                           <p className="font-bold text-white">R$ {l.principal.toLocaleString('pt-BR')}</p>
-                          <p className="text-xs text-zinc-500">{new Date(l.startDate).toLocaleDateString('pt-BR')} • {l.interestRate}% juros</p>
+                          <p className="text-xs text-zinc-500">{formatDate(l.startDate)} • {l.interestRate}% juros</p>
                         </div>
                         <div className="text-right">
                           <span className={`text-[10px] font-bold uppercase ${l.status === 'active' ? 'text-amber-500' : 'text-emerald-500'}`}>

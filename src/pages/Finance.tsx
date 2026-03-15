@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Transaction } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Trash2, TrendingUp, TrendingDown, Filter, X, Wallet } from 'lucide-react';
@@ -16,8 +16,9 @@ export default function Finance({ user }: { user: User }) {
   const [filter, setFilter] = useState('Todos');
 
   useEffect(() => {
+    const path = 'transactions';
     const q = query(
-      collection(db, 'transactions'),
+      collection(db, path),
       where('uid', '==', user.uid),
       orderBy('date', 'desc')
     );
@@ -25,7 +26,7 @@ export default function Finance({ user }: { user: User }) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
     }, (error) => {
-      console.error('Transactions Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, path);
     });
 
     return () => unsubscribe();
@@ -35,14 +36,15 @@ export default function Finance({ user }: { user: User }) {
     e.preventDefault();
     if (!description || !amount) return;
 
+    const path = 'transactions';
     try {
-      await addDoc(collection(db, 'transactions'), {
+      await addDoc(collection(db, path), {
         uid: user.uid,
         description,
         amount: parseFloat(amount),
         type,
         category,
-        date: new Date().toISOString()
+        date: new Date().toISOString().split('T')[0]
       });
 
       setDescription('');
@@ -50,19 +52,16 @@ export default function Finance({ user }: { user: User }) {
       setCategory('');
       setShowModal(false);
     } catch (error) {
-      console.error("Error saving transaction:", error);
-      alert('Erro ao salvar transação.');
+      handleFirestoreError(error, OperationType.CREATE, path);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-      try {
-        await deleteDoc(doc(db, 'transactions', id));
-      } catch (error) {
-        console.error("Error deleting transaction:", error);
-        alert('Erro ao excluir transação.');
-      }
+    const path = `transactions/${id}`;
+    try {
+      await deleteDoc(doc(db, 'transactions', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
     }
   };
 
@@ -225,7 +224,7 @@ export default function Finance({ user }: { user: User }) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="input-saas"
-                    placeholder="Ex: Instalação de chuveiro"
+                    placeholder="Ex: Pagamento Mensal"
                     required
                   />
                 </div>

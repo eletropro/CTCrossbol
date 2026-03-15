@@ -27,6 +27,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import InstallPrompt from './components/InstallPrompt';
 import NotificationManager from './components/NotificationManager';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function Layout({ children, user }: { children: React.ReactNode; user: User }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -226,29 +227,31 @@ export default function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        <Route
-          path="/*"
-          element={
-            user ? (
-              <Layout user={user}>
-                <Routes>
-                  <Route path="/" element={<Home user={user} />} />
-                  <Route path="/finance" element={<Finance user={user} />} />
-                  <Route path="/budgets" element={<Budgets user={user} />} />
-                  <Route path="/crm" element={<CRM user={user} />} />
-                  <Route path="/loans" element={<Loans user={user} />} />
-                  <Route path="/profile" element={<Profile user={user} />} />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </Layout>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+          <Route
+            path="/*"
+            element={
+              user ? (
+                <Layout user={user}>
+                  <Routes>
+                    <Route path="/" element={<Home user={user} />} />
+                    <Route path="/finance" element={<Finance user={user} />} />
+                    <Route path="/budgets" element={<Budgets user={user} />} />
+                    <Route path="/crm" element={<CRM user={user} />} />
+                    <Route path="/loans" element={<Loans user={user} />} />
+                    <Route path="/profile" element={<Profile user={user} />} />
+                    <Route path="*" element={<Navigate to="/" />} />
+                  </Routes>
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }

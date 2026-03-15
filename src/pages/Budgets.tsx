@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { collection, addDoc, query, where, onSnapshot, orderBy, updateDoc, doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Budget, Customer, UserProfile } from '../types';
 import { analyzeElectricalProjectPDF } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
@@ -50,29 +50,36 @@ export default function Budgets({ user }: { user: User }) {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'budgets'), where('uid', '==', user.uid), orderBy('date', 'desc'));
+    const budgetsPath = 'budgets';
+    const q = query(collection(db, budgetsPath), where('uid', '==', user.uid), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
     }, (error) => {
-      console.error('Budgets Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, budgetsPath);
     });
 
-    const qCust = query(collection(db, 'customers'), where('uid', '==', user.uid));
+    const customersPath = 'customers';
+    const qCust = query(collection(db, customersPath), where('uid', '==', user.uid));
     const unsubscribeCust = onSnapshot(qCust, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
     }, (error) => {
-      console.error('Customers Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, customersPath);
     });
 
     const getProfile = async () => {
-      const docRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserProfile;
-        setProfile(data);
-        if (data.contractClauses) {
-          setContractDetails(prev => ({ ...prev, customClauses: data.contractClauses || '' }));
+      const profilePath = `users/${user.uid}`;
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as UserProfile;
+          setProfile(data);
+          if (data.contractClauses) {
+            setContractDetails(prev => ({ ...prev, customClauses: data.contractClauses || '' }));
+          }
         }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, profilePath);
       }
     };
     getProfile();
@@ -86,6 +93,12 @@ export default function Budgets({ user }: { user: User }) {
       unsubscribeCust();
     };
   }, [user.uid]);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+  };
 
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -184,7 +197,7 @@ export default function Budgets({ user }: { user: User }) {
       materials,
       totalAmount: total,
       status: editingBudget ? editingBudget.status : 'pending',
-      date: editingBudget ? editingBudget.date : new Date().toISOString(),
+      date: editingBudget ? editingBudget.date : new Date().toISOString().split('T')[0],
       projectAnalysis: analysis,
       contractDetails,
       contractText: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS ELÉTRICOS
@@ -222,19 +235,15 @@ Assinatura do Prestador`
       setShowModal(false);
       resetForm();
     } catch (error) {
-      console.error("Error saving budget:", error);
-      alert('Erro ao salvar orçamento.');
+      handleFirestoreError(error, OperationType.WRITE, 'budgets');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
-      try {
-        await deleteDoc(doc(db, 'budgets', id));
-      } catch (error) {
-        console.error("Error deleting budget:", error);
-        alert('Erro ao excluir orçamento.');
-      }
+    try {
+      await deleteDoc(doc(db, 'budgets', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `budgets/${id}`);
     }
   };
 
@@ -285,12 +294,11 @@ Assinatura do Prestador`
         amount: budget.totalAmount,
         description: `Orçamento Aprovado: ${budget.title}`,
         category: 'Serviço',
-        date: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0],
         budgetId: budget.id
       });
     } catch (error) {
-      console.error("Error approving budget:", error);
-      alert('Erro ao aprovar orçamento.');
+      handleFirestoreError(error, OperationType.WRITE, `budgets/${budget.id}`);
     }
   };
 
@@ -609,7 +617,7 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h3 className="font-bold text-white text-lg leading-tight">{b.title}</h3>
-                <p className="text-xs text-zinc-500 mt-1">{b.customerName} • {new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                <p className="text-xs text-zinc-500 mt-1">{b.customerName} • {formatDate(b.date)}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${

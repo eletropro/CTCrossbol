@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Transaction, UserProfile, Loan } from '../types';
 import { getFinancialInsights } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,11 +16,11 @@ export default function Home({ user }: { user: User }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const transactionsPath = 'transactions';
     const q = query(
-      collection(db, 'transactions'),
+      collection(db, transactionsPath),
       where('uid', '==', user.uid),
-      orderBy('date', 'desc'),
-      limit(20)
+      orderBy('date', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -34,25 +34,32 @@ export default function Home({ user }: { user: User }) {
         setInsights('Adicione algumas transações para receber insights da IA!');
       }
     }, (error) => {
-      console.error('Home Transactions Snapshot Error:', error);
-      setLoading(false);
+      handleFirestoreError(error, OperationType.LIST, transactionsPath);
     });
 
+    const loansPath = 'loans';
     const qLoans = query(
-      collection(db, 'loans'),
+      collection(db, loansPath),
       where('uid', '==', user.uid),
       where('status', '==', 'active')
     );
 
     const unsubscribeLoans = onSnapshot(qLoans, (snapshot) => {
       setLoans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Loan)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, loansPath);
     });
 
     const fetchProfile = async () => {
-      const docRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+      const profilePath = `users/${user.uid}`;
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, profilePath);
       }
     };
     fetchProfile();

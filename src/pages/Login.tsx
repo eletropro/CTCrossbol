@@ -27,7 +27,33 @@ export default function Login() {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Auth Error:', err.code, err.message);
+      
+      let friendlyMessage = 'Ocorreu um erro inesperado. Tente novamente.';
+      
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          friendlyMessage = 'Este e-mail já está em uso. Tente fazer login ou use outro e-mail.';
+          break;
+        case 'auth/invalid-email':
+          friendlyMessage = 'O formato do e-mail é inválido.';
+          break;
+        case 'auth/weak-password':
+          friendlyMessage = 'A senha deve ter pelo menos 6 caracteres.';
+          break;
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          friendlyMessage = 'E-mail ou senha incorretos.';
+          break;
+        case 'auth/too-many-requests':
+          friendlyMessage = 'Muitas tentativas. Tente novamente mais tarde.';
+          break;
+        default:
+          friendlyMessage = err.message;
+      }
+      
+      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
@@ -42,7 +68,14 @@ export default function Login() {
       setMessage('E-mail de redefinição enviado com sucesso!');
       setTimeout(() => setShowForgotModal(false), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Reset Error:', err.code, err.message);
+      let friendlyMessage = 'Erro ao enviar e-mail. Verifique o endereço informado.';
+      if (err.code === 'auth/user-not-found') {
+        friendlyMessage = 'Nenhum usuário encontrado com este e-mail.';
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMessage = 'O formato do e-mail é inválido.';
+      }
+      setError(friendlyMessage);
     }
   };
 

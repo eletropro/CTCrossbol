@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Loan, Customer } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Calculator, Trash2, Percent, Landmark, X, ArrowRight, Search, ChevronRight, Edit2, DollarSign, CheckCircle2 } from 'lucide-react';
@@ -33,8 +33,9 @@ export default function Loans({ user }: { user: User }) {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
+    const loansPath = 'loans';
     const q = query(
-      collection(db, 'loans'), 
+      collection(db, loansPath), 
       where('uid', '==', user.uid), 
       where('status', '==', 'active'),
       orderBy('startDate', 'desc')
@@ -42,14 +43,15 @@ export default function Loans({ user }: { user: User }) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setLoans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Loan)));
     }, (error) => {
-      console.error('Loans Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, loansPath);
     });
 
-    const qCust = query(collection(db, 'customers'), where('uid', '==', user.uid));
+    const customersPath = 'customers';
+    const qCust = query(collection(db, customersPath), where('uid', '==', user.uid));
     const unsubscribeCust = onSnapshot(qCust, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
     }, (error) => {
-      console.error('Customers Snapshot Error:', error);
+      handleFirestoreError(error, OperationType.LIST, customersPath);
     });
 
     return () => {
@@ -142,20 +144,17 @@ export default function Loans({ user }: { user: User }) {
 
       if (editingLoan?.id) {
         await updateDoc(doc(db, 'loans', editingLoan.id), loanData);
-        alert('Empréstimo atualizado com sucesso!');
       } else {
         await addDoc(collection(db, 'loans'), {
           ...loanData,
           paidPrincipal: 0,
         });
-        alert('Empréstimo criado com sucesso!');
       }
       
       setShowModal(false);
       resetForm();
     } catch (error) {
-      console.error("Error saving loan:", error);
-      alert('Erro ao salvar empréstimo. Verifique os dados e tente novamente.');
+      handleFirestoreError(error, OperationType.WRITE, 'loans');
     } finally {
       setLoading(false);
     }
