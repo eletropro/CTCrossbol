@@ -25,7 +25,7 @@ export async function getFinancialInsights(transactions: Transaction[]) {
     return acc;
   }, { income: 0, expense: 0 });
 
-  const prompt = `Analise o seguinte resumo financeiro de um pequeno negócio de eletricista:
+  const prompt = `Analise o seguinte resumo financeiro de um negócio:
   Entradas: R$ ${summary.income}
   Saídas: R$ ${summary.expense}
   Saldo: R$ ${summary.income - summary.expense}
@@ -74,13 +74,17 @@ export async function generateCRMMessage(
   }
 
   const prompt = `Gere uma mensagem curta, profissional e amigável para WhatsApp para um cliente chamado ${customer.name}.
-  Contexto do Cliente: ${customer.notes || "Cliente de serviços elétricos"}.
+  ${customer.notes ? `Contexto do Cliente: ${customer.notes}` : ''}
   ${historyContext}
   
-  Objetivo: ${action === 'convince' ? 'Convencer o cliente a fechar um orçamento ou serviço pendente de forma elegante, mencionando especificamente o que ele consumiu ou está pendente.' : 'Agradecer por um serviço ou empréstimo já realizado, mencionando especificamente o que ele consumiu, reforçar a qualidade e se colocar à disposição para futuros serviços.'}
+  Objetivo: ${action === 'convince' ? 'Convencer o cliente a fechar um orçamento ou serviço pendente de forma elegante, mencionando especificamente o que ele consumiu ou está pendente no histórico acima.' : 'Agradecer por um serviço ou empréstimo já realizado, mencionando especificamente o que ele consumiu no histórico acima, reforçar a qualidade e se colocar à disposição para futuros contatos.'}
   
-  A mensagem deve ser direta, personalizada com base no histórico acima e pronta para enviar.
-  IMPORTANTE: Não use negrito (asteriscos como **texto**) na sua resposta. Use apenas texto simples.`;
+  REGRAS CRÍTICAS:
+  1. Baseie a mensagem EXCLUSIVAMENTE no histórico fornecido acima (orçamentos, serviços ou empréstimos).
+  2. NÃO invente serviços ou produtos que não estejam listados no histórico.
+  3. Se o histórico for de empréstimos, fale sobre empréstimos. Se for de orçamentos, fale sobre orçamentos.
+  4. Seja direto e personalizado.
+  5. IMPORTANTE: Não use negrito (asteriscos como **texto**) na sua resposta. Use apenas texto simples.`;
 
   try {
     const response = await ai.models.generateContent({
