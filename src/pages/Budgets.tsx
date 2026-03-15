@@ -490,8 +490,8 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
     <div className="space-y-6 max-w-5xl mx-auto pb-10 sm:pb-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Orçamentos</h2>
-          <p className="text-zinc-500 text-xs sm:text-sm">Propostas comerciais e contratos profissionais.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Orçamentos</h2>
+          <p className="text-zinc-400 text-xs sm:text-sm">Propostas comerciais e contratos profissionais.</p>
         </div>
         <button onClick={() => { resetForm(); setShowModal(true); }} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
           <Plus size={20} /> Novo Orçamento
@@ -507,41 +507,41 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <h3 className="font-bold text-zinc-900 text-lg leading-tight">{b.title}</h3>
-                <p className="text-xs text-zinc-400 mt-1">{b.customerName} • {new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                <h3 className="font-bold text-white text-lg leading-tight">{b.title}</h3>
+                <p className="text-xs text-zinc-500 mt-1">{b.customerName} • {new Date(b.date).toLocaleDateString('pt-BR')}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  b.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
-                  b.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                  b.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' : 
+                  b.status === 'rejected' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'
                 }`}>
                   {b.status === 'approved' ? 'Aprovado' : b.status === 'rejected' ? 'Recusado' : 'Pendente'}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleEdit(b)} className="p-1.5 text-zinc-400 hover:text-brand-600 transition-colors">
+                  <button onClick={() => handleEdit(b)} className="p-1.5 text-zinc-500 hover:text-emerald-400 transition-colors">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => b.id && handleDelete(b.id)} className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors">
+                  <button onClick={() => b.id && handleDelete(b.id)} className="p-1.5 text-zinc-500 hover:text-rose-500 transition-colors">
                     <TrashIcon size={16} />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-zinc-100">
+            <div className="flex justify-between items-center pt-4 border-t border-zinc-800">
               <div>
-                <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-widest">Valor Total</p>
-                <p className="text-2xl font-bold text-zinc-900">R$ {b.totalAmount.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Valor Total</p>
+                <p className="text-2xl font-bold text-white">R$ {b.totalAmount.toLocaleString('pt-BR')}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => generatePDF(b, 'budget')} className="p-2.5 bg-zinc-50 text-zinc-600 rounded-xl hover:bg-zinc-100 transition-colors" title="Orçamento">
+                <button onClick={() => generatePDF(b, 'budget')} className="p-2.5 bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors" title="Orçamento">
                   <FileText size={20} />
                 </button>
-                <button onClick={() => generatePDF(b, 'contract')} className="p-2.5 bg-zinc-50 text-zinc-600 rounded-xl hover:bg-zinc-100 transition-colors" title="Contrato">
+                <button onClick={() => generatePDF(b, 'contract')} className="p-2.5 bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors" title="Contrato">
                   <FileSignature size={20} />
                 </button>
                 {b.status === 'approved' && (
-                  <button onClick={() => generatePDF(b, 'receipt')} className="p-2.5 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-100 transition-colors" title="Recibo">
+                  <button onClick={() => generatePDF(b, 'receipt')} className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors" title="Recibo">
                     <Receipt size={20} />
                   </button>
                 )}
@@ -568,14 +568,14 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-white w-full max-w-3xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col"
+              className="bg-zinc-900 w-full max-w-3xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col border border-zinc-800"
             >
-              <div className="p-6 sm:p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50 sticky top-0 z-20">
+              <div className="p-6 sm:p-8 border-b border-zinc-800 flex justify-between items-center bg-zinc-900 sticky top-0 z-20">
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-zinc-900">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</h3>
-                  <p className="text-xs sm:text-sm text-zinc-500">Preencha os dados ou use a IA para analisar um projeto.</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</h3>
+                  <p className="text-xs sm:text-sm text-zinc-400">Preencha os dados ou use a IA para analisar um projeto.</p>
                 </div>
-                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all">
+                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={28} />
                 </button>
               </div>
@@ -617,10 +617,10 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                                   setCustomerSearch(c.name);
                                   setShowCustomerResults(false);
                                 }}
-                                className="w-full p-4 text-left hover:bg-zinc-50 active:bg-zinc-100 flex items-center justify-between border-b border-zinc-100 last:border-0"
+                                className="w-full p-4 text-left hover:bg-zinc-800 active:bg-zinc-700 flex items-center justify-between border-b border-zinc-800 last:border-0"
                               >
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-zinc-900">{c.name}</span>
+                                  <span className="font-bold text-white">{c.name}</span>
                                   <span className="text-[10px] text-zinc-400 uppercase tracking-widest">{c.phone}</span>
                                 </div>
                                 <ChevronRight size={16} className="text-zinc-400" />
@@ -635,7 +635,7 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Título do Projeto</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider">Título do Projeto</label>
                     <input
                       type="text"
                       value={title}
@@ -648,10 +648,10 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                 </div>
 
                 {/* AI Analysis Section */}
-                <div className="bg-brand-50 rounded-3xl p-5 sm:p-6 border border-brand-100 relative overflow-hidden">
+                <div className="bg-emerald-500/10 rounded-3xl p-5 sm:p-6 border border-emerald-500/20 relative overflow-hidden">
                   <div className="relative z-10">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-brand-700 font-bold">
+                      <div className="flex items-center gap-2 text-emerald-500 font-bold">
                         <Sparkles size={20} />
                         <span className="text-sm sm:text-base">Análise de Projeto com IA</span>
                       </div>
@@ -673,7 +673,7 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                     </div>
                     
                     {!analysis && !loadingAI && (
-                      <div className="flex items-start gap-3 text-brand-600/70 text-[10px] sm:text-xs italic">
+                      <div className="flex items-start gap-3 text-emerald-500/70 text-[10px] sm:text-xs italic">
                         <AlertCircle size={16} className="shrink-0" />
                         <p>Dica: Faça o upload do PDF do projeto elétrico para que a IA extraia automaticamente os materiais e sugira um valor.</p>
                       </div>
@@ -687,56 +687,56 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                       >
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                           {analysis.sockets && (
-                            <div className="bg-white p-3 rounded-2xl border border-brand-100">
+                            <div className="bg-zinc-800 p-3 rounded-2xl border border-zinc-700">
                               <p className="text-[9px] text-zinc-400 uppercase font-bold mb-1">Tomadas</p>
-                              <p className="font-bold text-brand-600">{analysis.sockets} pts</p>
+                              <p className="font-bold text-emerald-500">{analysis.sockets} pts</p>
                             </div>
                           )}
                           {analysis.switches && (
-                            <div className="bg-white p-3 rounded-2xl border border-brand-100">
+                            <div className="bg-zinc-800 p-3 rounded-2xl border border-zinc-700">
                               <p className="text-[9px] text-zinc-400 uppercase font-bold mb-1">Interruptores</p>
-                              <p className="font-bold text-brand-600">{analysis.switches} pts</p>
+                              <p className="font-bold text-emerald-500">{analysis.switches} pts</p>
                             </div>
                           )}
                           {analysis.dichroics && (
-                            <div className="bg-white p-3 rounded-2xl border border-brand-100">
+                            <div className="bg-zinc-800 p-3 rounded-2xl border border-zinc-700">
                               <p className="text-[9px] text-zinc-400 uppercase font-bold mb-1">Dicroicas</p>
-                              <p className="font-bold text-brand-600">{analysis.dichroics} pts</p>
+                              <p className="font-bold text-emerald-500">{analysis.dichroics} pts</p>
                             </div>
                           )}
                           {analysis.ledPanels && (
-                            <div className="bg-white p-3 rounded-2xl border border-brand-100">
+                            <div className="bg-zinc-800 p-3 rounded-2xl border border-zinc-700">
                               <p className="text-[9px] text-zinc-400 uppercase font-bold mb-1">Painéis LED</p>
-                              <p className="font-bold text-brand-600">{analysis.ledPanels} un</p>
+                              <p className="font-bold text-emerald-500">{analysis.ledPanels} un</p>
                             </div>
                           )}
                           {analysis.ledProfiles && analysis.ledProfiles.map((p, i) => (
-                            <div key={i} className="bg-white p-3 rounded-2xl border border-brand-100">
+                            <div key={i} className="bg-zinc-800 p-3 rounded-2xl border border-zinc-700">
                               <p className="text-[9px] text-zinc-400 uppercase font-bold mb-1">Perfil LED ({p.type})</p>
-                              <p className="font-bold text-brand-600">{p.meters}m</p>
+                              <p className="font-bold text-emerald-500">{p.meters}m</p>
                             </div>
                           ))}
                         </div>
                         
-                        <div className="bg-white/50 p-4 rounded-2xl border border-brand-100 space-y-2">
-                          <p className="text-[10px] text-brand-700 font-bold uppercase">Base de Cálculo IA</p>
-                          <p className="text-xs text-brand-600 leading-relaxed">{analysis.calculationBasis}</p>
-                          <p className="text-sm font-bold text-brand-800">Valor Total Sugerido: R$ {analysis.suggestedValue?.toLocaleString('pt-BR')}</p>
+                        <div className="bg-zinc-800/50 p-4 rounded-2xl border border-zinc-700 space-y-2">
+                          <p className="text-[10px] text-emerald-500 font-bold uppercase">Base de Cálculo IA</p>
+                          <p className="text-xs text-emerald-400 leading-relaxed">{analysis.calculationBasis}</p>
+                          <p className="text-sm font-bold text-white">Valor Total Sugerido: R$ {analysis.suggestedValue?.toLocaleString('pt-BR')}</p>
                         </div>
                       </motion.div>
                     )}
                   </div>
-                  <Sparkles className="absolute -right-6 -bottom-6 text-brand-100 opacity-50" size={120} />
+                  <Sparkles className="absolute -right-6 -bottom-6 text-emerald-900/20 opacity-50" size={120} />
                 </div>
 
                 {/* Items Table */}
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Itens do Orçamento</label>
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Itens do Orçamento</label>
                     <button
                       type="button"
                       onClick={() => setItems([...items, { description: '', quantity: 1, price: 0 }])}
-                      className="text-brand-600 text-xs font-bold hover:underline text-left"
+                      className="text-emerald-500 text-xs font-bold hover:underline text-left"
                     >
                       + Adicionar Item Manualmente
                     </button>
@@ -747,7 +747,7 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         key={idx}
-                        className="flex flex-col sm:flex-row gap-3 p-4 sm:p-0 bg-zinc-50 sm:bg-transparent rounded-2xl border border-zinc-100 sm:border-0 relative"
+                        className="flex flex-col sm:flex-row gap-3 p-4 sm:p-0 bg-zinc-800 sm:bg-transparent rounded-2xl border border-zinc-700 sm:border-0 relative"
                       >
                         <div className="flex-1">
                           <label className="sm:hidden block text-[9px] font-bold text-zinc-400 uppercase mb-1">Descrição</label>
