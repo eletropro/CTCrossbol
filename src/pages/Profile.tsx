@@ -4,7 +4,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { UserProfile } from '../types';
 import { motion } from 'motion/react';
-import { Save, LogOut, Building, User as UserIcon, Phone, MapPin, FileText, CheckCircle2 } from 'lucide-react';
+import { Save, LogOut, Building, User as UserIcon, Phone, MapPin, FileText, CheckCircle2, Fuel, Navigation, Map as MapIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { calculateRoute, RouteResult } from '../services/routeService';
 
 export default function Profile({ user }: { user: User }) {
   const [profile, setProfile] = useState<UserProfile>({
@@ -20,6 +21,11 @@ export default function Profile({ user }: { user: User }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Route Calculator State
+  const [destination, setDestination] = useState('');
+  const [calculating, setCalculating] = useState(false);
+  const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -129,7 +135,7 @@ export default function Profile({ user }: { user: User }) {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço Fiscal</label>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço Fiscal (Origem)</label>
                 <input
                   type="text"
                   value={profile.address}
@@ -138,6 +144,126 @@ export default function Profile({ user }: { user: User }) {
                   placeholder="Rua, Número, Bairro, Cidade"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="card-saas p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <Fuel size={20} />
+              </div>
+              Configuração de Combustível
+            </div>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Preço do Litro (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={profile.fuelPrice || ''}
+                  onChange={(e) => setProfile({ ...profile, fuelPrice: parseFloat(e.target.value) })}
+                  className="input-saas py-3"
+                  placeholder="Ex: 5.89"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Consumo Médio (KM/L)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={profile.fuelConsumption || ''}
+                  onChange={(e) => setProfile({ ...profile, fuelConsumption: parseFloat(e.target.value) })}
+                  className="input-saas py-3"
+                  placeholder="Ex: 12.5"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Route Calculator Section */}
+        <div className="card-saas p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+              <Navigation size={20} />
+            </div>
+            Calculadora de Deslocamento
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400">Calcule a distância e o custo de combustível até o cliente usando o Google Maps.</p>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço do Cliente</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    className="input-saas flex-1"
+                    placeholder="Digite o endereço do cliente..."
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!profile.address || !destination) return;
+                      setCalculating(true);
+                      try {
+                        const res = await calculateRoute(
+                          profile.address,
+                          destination,
+                          profile.fuelPrice || 0,
+                          profile.fuelConsumption || 1
+                        );
+                        setRouteResult(res);
+                      } catch (error) {
+                        console.error(error);
+                      } finally {
+                        setCalculating(false);
+                      }
+                    }}
+                    disabled={calculating || !profile.address || !destination}
+                    className="btn-primary px-6"
+                  >
+                    {calculating ? <Loader2 className="animate-spin" size={20} /> : 'Calcular'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 rounded-3xl p-6 border border-zinc-800 flex flex-col justify-center">
+              {routeResult ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Distância</p>
+                      <p className="text-xl font-bold text-white">{routeResult.distanceKm} km</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Tempo Est.</p>
+                      <p className="text-xl font-bold text-white">{routeResult.durationText}</p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-zinc-700">
+                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Custo de Combustível</p>
+                    <p className="text-2xl font-bold text-emerald-500">R$ {routeResult.fuelCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                  <a
+                    href={routeResult.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl text-xs font-bold transition-all mt-2"
+                  >
+                    <MapIcon size={16} /> Ver no Google Maps <ArrowRight size={14} />
+                  </a>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Navigation className="text-zinc-700 mx-auto mb-2" size={32} />
+                  <p className="text-zinc-500 text-xs">Insira o endereço do cliente para calcular.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

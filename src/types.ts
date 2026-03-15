@@ -8,6 +8,8 @@ export interface UserProfile {
   logoUrl?: string;
   contractClauses?: string;
   monthlyGoal?: number;
+  fuelPrice?: number;
+  fuelConsumption?: number;
 }
 
 export interface Transaction {
