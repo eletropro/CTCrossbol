@@ -28,17 +28,23 @@ export async function getFinancialInsights(transactions: Transaction[]) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-flash-latest",
       contents: prompt,
     });
     return response.text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
+    if (error?.message?.includes('429') || error?.message?.includes('quota')) {
+      return "Limite de uso da IA atingido para hoje. Tente novamente amanhã ou use uma chave própria.";
+    }
     return "Não foi possível gerar insights no momento.";
   }
 }
 
 export async function generateCRMMessage(customer: Customer, action: 'convince' | 'thank') {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) return "";
+
   const prompt = `Gere uma mensagem curta, profissional e amigável para WhatsApp para um cliente chamado ${customer.name}.
   Contexto: ${customer.notes || "Cliente de serviços elétricos"}.
   Objetivo: ${action === 'convince' ? 'Convencer o cliente a fechar um orçamento ou serviço pendente de forma elegante.' : 'Agradecer por um serviço já realizado, reforçar a qualidade e se colocar à disposição para futuros serviços.'}
@@ -47,17 +53,18 @@ export async function generateCRMMessage(customer: Customer, action: 'convince' 
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-flash-latest",
       contents: prompt,
     });
     return response.text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
     return "";
   }
 }
 
 export async function analyzeElectricalProjectPDF(base64Data: string) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   const prompt = `Analise o seguinte documento PDF de um projeto elétrico e extraia detalhadamente:
   1. Quantidade de Tomadas (novas e existentes a trocar).
   2. Quantidade de Interruptores (simples, paralelos, intermediários).
@@ -84,12 +91,12 @@ export async function analyzeElectricalProjectPDF(base64Data: string) {
   calculationBasis (string - breve explicação de como chegou no valor).`;
 
   try {
-    if (!(import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY)) {
+    if (!apiKey) {
       console.error("VITE_GEMINI_API_KEY missing");
       return null;
     }
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-flash-latest",
       contents: [
         { text: prompt },
         {

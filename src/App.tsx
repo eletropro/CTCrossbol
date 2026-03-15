@@ -25,6 +25,7 @@ import CRM from './pages/CRM';
 import Loans from './pages/Loans';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import InstallPrompt from './components/InstallPrompt';
 
 function Layout({ children, user }: { children: React.ReactNode; user: User }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -177,6 +178,8 @@ function Layout({ children, user }: { children: React.ReactNode; user: User }) {
             );
           })}
         </nav>
+
+        <InstallPrompt />
       </div>
     </div>
   );
