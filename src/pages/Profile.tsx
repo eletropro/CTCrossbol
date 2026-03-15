@@ -5,7 +5,7 @@ import { db, auth } from '../firebase';
 import { UserProfile } from '../types';
 import { motion } from 'motion/react';
 import { Save, LogOut, Building, User as UserIcon, Phone, MapPin, FileText, CheckCircle2, Fuel, Navigation, Map as MapIcon, ArrowRight, Loader2 } from 'lucide-react';
-import { calculateRoute, RouteResult } from '../services/routeService';
+import { calculateRoute, RouteResult, searchAddress } from '../services/routeService';
 
 export default function Profile({ user }: { user: User }) {
   const [profile, setProfile] = useState<UserProfile>({
@@ -25,7 +25,10 @@ export default function Profile({ user }: { user: User }) {
   // Route Calculator State
   const [destination, setDestination] = useState('');
   const [calculating, setCalculating] = useState(false);
+  const [searchingOrigin, setSearchingOrigin] = useState(false);
+  const [searchingDest, setSearchingDest] = useState(false);
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
+  const [calcError, setCalcError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -46,6 +49,55 @@ export default function Profile({ user }: { user: User }) {
     setSaving(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const handleSearchOrigin = async () => {
+    if (!profile.address) return;
+    setSearchingOrigin(true);
+    const formatted = await searchAddress(profile.address);
+    setProfile(prev => ({ ...prev, address: formatted }));
+    setSearchingOrigin(false);
+  };
+
+  const handleSearchDest = async () => {
+    if (!destination) return;
+    setSearchingDest(true);
+    const formatted = await searchAddress(destination);
+    setDestination(formatted);
+    setSearchingDest(false);
+  };
+
+  const handleCalculate = async () => {
+    if (!profile.address) {
+      setCalcError("Por favor, salve o endereço da sua empresa primeiro.");
+      return;
+    }
+    if (!destination) {
+      setCalcError("Por favor, insira o endereço do cliente.");
+      return;
+    }
+
+    setCalcError(null);
+    setCalculating(true);
+    try {
+      const res = await calculateRoute(
+        profile.address,
+        destination,
+        profile.fuelPrice || 0,
+        profile.fuelConsumption || 1
+      );
+      
+      if (res.distanceKm === 0) {
+        setCalcError("Não foi possível calcular a rota. Verifique os endereços.");
+      } else {
+        setRouteResult(res);
+      }
+    } catch (error) {
+      console.error(error);
+      setCalcError("Erro na conexão com o serviço de mapas.");
+    } finally {
+      setCalculating(false);
+    }
   };
 
   if (loading) return null;
@@ -136,13 +188,25 @@ export default function Profile({ user }: { user: User }) {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço Fiscal (Origem)</label>
-                <input
-                  type="text"
-                  value={profile.address}
-                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                  className="input-saas py-3"
-                  placeholder="Rua, Número, Bairro, Cidade"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={profile.address}
+                    onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                    className="input-saas py-3"
+                    placeholder="Rua, Número, Bairro, Cidade"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSearchOrigin}
+                    disabled={searchingOrigin || !profile.address}
+                    className="p-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl transition-all"
+                    title="Buscar endereço oficial"
+                  >
+                    {searchingOrigin ? <Loader2 className="animate-spin" size={18} /> : <MapIcon size={18} />}
+                  </button>
+                </div>
+                <p className="text-[9px] text-zinc-500 mt-1">Clique no ícone de mapa para formatar o endereço via Google Maps.</p>
               </div>
             </div>
           </div>
@@ -197,38 +261,33 @@ export default function Profile({ user }: { user: User }) {
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Endereço do Cliente</label>
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="input-saas flex-1"
-                    placeholder="Digite o endereço do cliente..."
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      className="input-saas pr-12"
+                      placeholder="Digite o endereço do cliente..."
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSearchDest}
+                      disabled={searchingDest || !destination}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-zinc-300 transition-all"
+                    >
+                      {searchingDest ? <Loader2 className="animate-spin" size={16} /> : <MapIcon size={16} />}
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (!profile.address || !destination) return;
-                      setCalculating(true);
-                      try {
-                        const res = await calculateRoute(
-                          profile.address,
-                          destination,
-                          profile.fuelPrice || 0,
-                          profile.fuelConsumption || 1
-                        );
-                        setRouteResult(res);
-                      } catch (error) {
-                        console.error(error);
-                      } finally {
-                        setCalculating(false);
-                      }
-                    }}
+                    onClick={handleCalculate}
                     disabled={calculating || !profile.address || !destination}
                     className="btn-primary px-6"
                   >
                     {calculating ? <Loader2 className="animate-spin" size={20} /> : 'Calcular'}
                   </button>
                 </div>
+                {calcError && <p className="text-[10px] text-rose-500 mt-2 font-bold">{calcError}</p>}
               </div>
             </div>
 

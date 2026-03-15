@@ -15,41 +15,77 @@ export async function calculateRoute(
   fuelPrice: number,
   fuelConsumption: number
 ): Promise<RouteResult> {
-  const prompt = `Calcule a distância e o tempo de viagem entre "${origin}" e "${destination}". 
-  Retorne apenas um JSON com os campos: 
-  - distanceKm (número, apenas o valor em km)
-  - durationText (texto, ex: "25 min")
-  - mapsUrl (URL do Google Maps para essa rota)
+  const prompt = `Você é um especialista em logística e rotas.
+  Calcule a distância e o tempo de viagem entre:
+  Origem: "${origin}"
+  Destino: "${destination}"
   
-  Use ferramentas de mapas para precisão.`;
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      tools: [{ googleMaps: {} }],
-    },
-  });
-
-  let result = { distanceKm: 0, durationText: "N/A", mapsUrl: "" };
-  try {
-    const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      result = JSON.parse(jsonMatch[0]);
-    }
-  } catch (e) {
-    console.error("Failed to parse AI response as JSON", e);
+  Use obrigatoriamente a ferramenta Google Maps para obter dados reais e precisos.
+  
+  Retorne a resposta estritamente como um objeto JSON válido, sem blocos de código markdown, contendo:
+  {
+    "distanceKm": número (apenas o valor numérico em km),
+    "durationText": "texto com o tempo (ex: 30 min)",
+    "mapsUrl": "URL direta da rota no Google Maps"
   }
   
-  // Calculate fuel cost: (Distance / Consumption) * Price
-  const distance = Number(result.distanceKm) || 0;
-  const cost = (distance / (fuelConsumption || 10)) * (fuelPrice || 5);
+  Não escreva mais nada além do JSON.`;
 
-  return {
-    distanceKm: distance,
-    durationText: result.durationText || "N/A",
-    fuelCost: cost,
-    mapsUrl: result.mapsUrl || `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
-  };
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+      },
+    });
+
+    const text = response.text || '';
+    // Extract JSON from potential markdown or extra text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Não foi possível obter dados da rota.");
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
+    
+    const distance = Number(result.distanceKm) || 0;
+    const cost = (distance / (fuelConsumption || 10)) * (fuelPrice || 5);
+
+    return {
+      distanceKm: distance,
+      durationText: result.durationText || "N/A",
+      fuelCost: cost,
+      mapsUrl: result.mapsUrl || `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
+    };
+  } catch (error) {
+    console.error("Erro ao calcular rota:", error);
+    // Fallback calculation if AI fails but we have addresses
+    return {
+      distanceKm: 0,
+      durationText: "Erro ao calcular",
+      fuelCost: 0,
+      mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
+    };
+  }
+}
+
+export async function searchAddress(query: string): Promise<string> {
+  const prompt = `Encontre o endereço completo, oficial e formatado para: "${query}". 
+  Use o Google Maps para validar. Retorne apenas o endereço formatado em uma única linha, sem comentários.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleMaps: {} }],
+      },
+    });
+
+    return response.text?.trim() || query;
+  } catch (error) {
+    console.error("Erro ao buscar endereço:", error);
+    return query;
+  }
 }
