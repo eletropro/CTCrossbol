@@ -366,8 +366,12 @@ Assinatura do Prestador`
 
         let finalY = (doc as any).lastAutoTable?.finalY || 135;
         
+        // Ensure we are on the last page the table occupied
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        doc.setPage(totalPages);
+
         // Position for Total Box
-        if (finalY > pageHeight - 70) {
+        if (finalY > pageHeight - 85) {
           doc.addPage();
           finalY = 35;
         } else {
@@ -382,11 +386,13 @@ Assinatura do Prestador`
         doc.setTextColor(255, 255, 255);
         doc.text(`VALOR TOTAL: R$ ${safeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, finalY + 1, { align: 'right' });
         
-        // Signatures Section - Dynamic position
-        let sigY = finalY + 45;
-        if (sigY > pageHeight - 50) {
+        // Signatures Section - Fixed at bottom but moves to new page if needed
+        let sigY = pageHeight - 60;
+        
+        // If total box is too close to signature, move signature to next page
+        if (finalY > sigY - 30) {
           doc.addPage();
-          sigY = 50;
+          sigY = pageHeight - 60;
         }
 
         doc.setFontSize(10);

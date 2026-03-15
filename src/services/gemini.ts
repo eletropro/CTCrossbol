@@ -6,6 +6,12 @@ const ai = new GoogleGenAI({
 });
 
 export async function getFinancialInsights(transactions: Transaction[]) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    return "IA Desconectada: Configure a chave de API nas configurações.";
+  }
+
   const summary = transactions.reduce((acc, t) => {
     if (t.type === 'income') acc.income += t.amount;
     else acc.expense += t.amount;
