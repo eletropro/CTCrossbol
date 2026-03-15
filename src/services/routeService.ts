@@ -11,9 +11,6 @@ export interface RouteResult {
 
 function getAi() {
   const apiKey = (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || '';
-  if (!apiKey) {
-    console.warn("GEMINI_API_KEY não encontrada no ambiente.");
-  }
   return new GoogleGenAI({ apiKey });
 }
 
@@ -29,19 +26,14 @@ export async function calculateRoute(
   const originStr = originCoords ? `${originCoords[0]}, ${originCoords[1]}` : origin;
   const destStr = destCoords ? `${destCoords[0]}, ${destCoords[1]}` : destination;
 
-  const prompt = `Aja como um GPS. Calcule a distância de condução e o tempo entre:
-  ORIGEM: "${originStr}"
-  DESTINO: "${destStr}"
+  const prompt = `Calcule a distância de condução e o tempo de viagem entre:
+  ORIGEM: ${originStr}
+  DESTINO: ${destStr}
   
-  Use a ferramenta Google Maps para validar.
-  Retorne APENAS um JSON:
-  {
-    "distanceKm": número,
-    "durationText": "tempo",
-    "mapsUrl": "link",
-    "originCoords": [lat, lng],
-    "destCoords": [lat, lng]
-  }`;
+  Use o Google Maps para encontrar a rota real.
+  Responda no formato:
+  Distância: [valor] km
+  Tempo: [valor]`;
 
   try {
     const response = await ai.models.generateContent({
@@ -53,36 +45,44 @@ export async function calculateRoute(
     });
 
     const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const distanceMatch = text.match(/Distância:\s*([\d.,]+)\s*km/i);
+    const durationMatch = text.match(/Tempo:\s*([^\n]+)/i);
     
-    if (!jsonMatch) {
-      return {
-        distanceKm: 0,
-        durationText: "Erro no formato",
-        fuelCost: 0,
-        mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
-      };
+    let distance = 0;
+    if (distanceMatch) {
+      distance = parseFloat(distanceMatch[1].replace(',', '.'));
     }
 
-    const result = JSON.parse(jsonMatch[0]);
-    const distance = parseFloat(result.distanceKm) || 0;
+    let mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}`;
+    let finalOriginCoords = originCoords;
+    let finalDestCoords = destCoords;
+
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks) {
+      for (const chunk of chunks) {
+        if (chunk.maps?.uri) mapsUrl = chunk.maps.uri;
+        // Note: groundingChunks usually don't have lat/lng directly, 
+        // but the model might have them in the text if we ask.
+      }
+    }
+
     const consumption = fuelConsumption > 0 ? fuelConsumption : 10;
     const price = fuelPrice > 0 ? fuelPrice : 0;
     const cost = (distance / consumption) * price;
 
     return {
       distanceKm: distance,
-      durationText: result.durationText || "N/A",
+      durationText: durationMatch ? durationMatch[1].trim() : "N/A",
       fuelCost: cost,
-      mapsUrl: result.mapsUrl || `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
-      originCoords: result.originCoords || originCoords,
-      destCoords: result.destCoords || destCoords
+      mapsUrl: mapsUrl,
+      originCoords: finalOriginCoords,
+      destCoords: finalDestCoords
     };
   } catch (error) {
     console.error("Erro calculateRoute:", error);
     return {
       distanceKm: 0,
-      durationText: "Erro de serviço",
+      durationText: "Erro",
       fuelCost: 0,
       mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
     };
@@ -91,12 +91,10 @@ export async function calculateRoute(
 
 export async function searchAddress(query: string): Promise<{ address: string; coords?: [number, number] }> {
   const ai = getAi();
-  const prompt = `Localize o endereço completo e as coordenadas geográficas para: "${query}". 
-  Seja preciso. Retorne APENAS um objeto JSON válido no formato:
-  {
-    "address": "endereço completo formatado",
-    "coords": [latitude, longitude]
-  }`;
+  const prompt = `Localize o endereço completo e as coordenadas (latitude e longitude) para: "${query}".
+  Use o Google Maps. Responda no formato:
+  Endereço: [endereço completo]
+  Coordenadas: [lat], [lng]`;
 
   try {
     const response = await ai.models.generateContent({
@@ -108,21 +106,18 @@ export async function searchAddress(query: string): Promise<{ address: string; c
     });
 
     const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    
-    if (jsonMatch) {
-      try {
-        const result = JSON.parse(jsonMatch[0]);
-        if (result.address && result.coords) {
-          return { address: result.address, coords: result.coords };
-        }
-      } catch (e) {
-        console.error("Erro ao parsear JSON de endereço:", e);
-      }
+    const addressMatch = text.match(/Endereço:\s*([^\n]+)/i);
+    const coordsMatch = text.match(/Coordenadas:\s*([\d.-]+)\s*,\s*([\d.-]+)/i);
+
+    let coords: [number, number] | undefined = undefined;
+    if (coordsMatch) {
+      coords = [parseFloat(coordsMatch[1]), parseFloat(coordsMatch[2])];
     }
 
-    // Se falhar o JSON, tenta pegar do texto ou grounding se disponível
-    return { address: text.split('\n')[0] || query };
+    return { 
+      address: addressMatch ? addressMatch[1].trim() : query, 
+      coords 
+    };
   } catch (error) {
     console.error("Erro searchAddress:", error);
     return { address: query };
@@ -131,8 +126,8 @@ export async function searchAddress(query: string): Promise<{ address: string; c
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   const ai = getAi();
-  const prompt = `Qual é o endereço exato para estas coordenadas: latitude ${lat}, longitude ${lng}? 
-  Responda APENAS com o endereço formatado, sem mais nada.`;
+  const prompt = `Qual é o endereço exato para estas coordenadas: ${lat}, ${lng}? 
+  Use o Google Maps. Responda apenas o endereço.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -143,11 +138,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       },
     });
 
-    const text = response.text?.trim();
-    if (text && text.length > 5) {
-      return text;
-    }
-    return `${lat}, ${lng}`;
+    return response.text?.trim() || `${lat}, ${lng}`;
   } catch (error) {
     console.error("Erro reverseGeocode:", error);
     return `${lat}, ${lng}`;
