@@ -32,6 +32,9 @@ export default function Home({ user }: { user: User }) {
       } else {
         setInsights('Adicione algumas transações para receber insights da IA!');
       }
+    }, (error) => {
+      console.error('Home Transactions Snapshot Error:', error);
+      setLoading(false);
     });
 
     const fetchProfile = async () => {

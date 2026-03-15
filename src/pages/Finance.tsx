@@ -24,6 +24,8 @@ export default function Finance({ user }: { user: User }) {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
+    }, (error) => {
+      console.error('Transactions Snapshot Error:', error);
     });
 
     return () => unsubscribe();
@@ -33,23 +35,35 @@ export default function Finance({ user }: { user: User }) {
     e.preventDefault();
     if (!description || !amount) return;
 
-    await addDoc(collection(db, 'transactions'), {
-      uid: user.uid,
-      description,
-      amount: parseFloat(amount),
-      type,
-      category,
-      date: new Date().toISOString()
-    });
+    try {
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid,
+        description,
+        amount: parseFloat(amount),
+        type,
+        category,
+        date: new Date().toISOString()
+      });
 
-    setDescription('');
-    setAmount('');
-    setCategory('');
-    setShowModal(false);
+      setDescription('');
+      setAmount('');
+      setCategory('');
+      setShowModal(false);
+    } catch (error) {
+      console.error("Error saving transaction:", error);
+      alert('Erro ao salvar transação.');
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, 'transactions', id));
+    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await deleteDoc(doc(db, 'transactions', id));
+      } catch (error) {
+        console.error("Error deleting transaction:", error);
+        alert('Erro ao excluir transação.');
+      }
+    }
   };
 
   const filteredTransactions = transactions.filter(t => {

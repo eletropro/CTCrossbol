@@ -28,16 +28,22 @@ export default function CRM({ user }: { user: User }) {
     const q = query(collection(db, 'customers'), where('uid', '==', user.uid), orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
+    }, (error) => {
+      console.error('Customers Snapshot Error:', error);
     });
 
     const qBudgets = query(collection(db, 'budgets'), where('uid', '==', user.uid));
     const unsubscribeBudgets = onSnapshot(qBudgets, (snapshot) => {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
+    }, (error) => {
+      console.error('Budgets Snapshot Error:', error);
     });
 
     const qLoans = query(collection(db, 'loans'), where('uid', '==', user.uid));
     const unsubscribeLoans = onSnapshot(qLoans, (snapshot) => {
       setLoans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Loan)));
+    }, (error) => {
+      console.error('Loans Snapshot Error:', error);
     });
 
     return () => {
@@ -49,18 +55,23 @@ export default function CRM({ user }: { user: User }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addDoc(collection(db, 'customers'), {
-      uid: user.uid,
-      name,
-      email,
-      phone,
-      cpf,
-      address,
-      notes,
-      lastInteraction: new Date().toISOString()
-    });
-    setShowModal(false);
-    resetForm();
+    try {
+      await addDoc(collection(db, 'customers'), {
+        uid: user.uid,
+        name,
+        email,
+        phone,
+        cpf,
+        address,
+        notes,
+        lastInteraction: new Date().toISOString()
+      });
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      alert('Erro ao salvar cliente.');
+    }
   };
 
   const resetForm = () => {
@@ -164,7 +175,14 @@ export default function CRM({ user }: { user: User }) {
                   <p className="text-xs text-zinc-400">{c.phone}</p>
                 </div>
               </div>
-              <button onClick={() => c.id && deleteDoc(doc(db, 'customers', c.id))} className="text-zinc-600 hover:text-red-500 transition-colors">
+              <button onClick={() => {
+                if (c.id && window.confirm('Tem certeza que deseja excluir este cliente?')) {
+                  deleteDoc(doc(db, 'customers', c.id)).catch(err => {
+                    console.error('Error deleting customer:', err);
+                    alert('Erro ao excluir cliente.');
+                  });
+                }
+              }} className="text-zinc-600 hover:text-red-500 transition-colors">
                 <Trash2 size={18} />
               </button>
             </div>

@@ -53,11 +53,15 @@ export default function Budgets({ user }: { user: User }) {
     const q = query(collection(db, 'budgets'), where('uid', '==', user.uid), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
+    }, (error) => {
+      console.error('Budgets Snapshot Error:', error);
     });
 
     const qCust = query(collection(db, 'customers'), where('uid', '==', user.uid));
     const unsubscribeCust = onSnapshot(qCust, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
+    }, (error) => {
+      console.error('Customers Snapshot Error:', error);
     });
 
     const getProfile = async () => {
@@ -209,19 +213,28 @@ __________________________
 Assinatura do Prestador`
     };
 
-    if (editingBudget?.id) {
-      await updateDoc(doc(db, 'budgets', editingBudget.id), budgetData);
-    } else {
-      await addDoc(collection(db, 'budgets'), budgetData);
+    try {
+      if (editingBudget?.id) {
+        await updateDoc(doc(db, 'budgets', editingBudget.id), budgetData);
+      } else {
+        await addDoc(collection(db, 'budgets'), budgetData);
+      }
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving budget:", error);
+      alert('Erro ao salvar orçamento.');
     }
-
-    setShowModal(false);
-    resetForm();
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
-      await deleteDoc(doc(db, 'budgets', id));
+      try {
+        await deleteDoc(doc(db, 'budgets', id));
+      } catch (error) {
+        console.error("Error deleting budget:", error);
+        alert('Erro ao excluir orçamento.');
+      }
     }
   };
 
@@ -263,17 +276,22 @@ Assinatura do Prestador`
 
   const handleApprove = async (budget: Budget) => {
     if (!budget.id) return;
-    await updateDoc(doc(db, 'budgets', budget.id), { status: 'approved' });
-    
-    await addDoc(collection(db, 'transactions'), {
-      uid: user.uid,
-      type: 'income',
-      amount: budget.totalAmount,
-      description: `Orçamento Aprovado: ${budget.title}`,
-      category: 'Serviço',
-      date: new Date().toISOString(),
-      budgetId: budget.id
-    });
+    try {
+      await updateDoc(doc(db, 'budgets', budget.id), { status: 'approved' });
+      
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid,
+        type: 'income',
+        amount: budget.totalAmount,
+        description: `Orçamento Aprovado: ${budget.title}`,
+        category: 'Serviço',
+        date: new Date().toISOString(),
+        budgetId: budget.id
+      });
+    } catch (error) {
+      console.error("Error approving budget:", error);
+      alert('Erro ao aprovar orçamento.');
+    }
   };
 
   const generatePDF = (budget: Budget, type: 'budget' | 'contract' | 'receipt') => {

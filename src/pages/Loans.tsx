@@ -34,11 +34,15 @@ export default function Loans({ user }: { user: User }) {
     const q = query(collection(db, 'loans'), where('uid', '==', user.uid), orderBy('startDate', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setLoans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Loan)));
+    }, (error) => {
+      console.error('Loans Snapshot Error:', error);
     });
 
     const qCust = query(collection(db, 'customers'), where('uid', '==', user.uid));
     const unsubscribeCust = onSnapshot(qCust, (snapshot) => {
       setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
+    }, (error) => {
+      console.error('Customers Snapshot Error:', error);
     });
 
     return () => {
@@ -51,11 +55,14 @@ export default function Loans({ user }: { user: User }) {
     if (showManageModal?.id) {
       const q = query(
         collection(db, 'transactions'),
+        where('uid', '==', user.uid),
         where('loanId', '==', showManageModal.id),
         orderBy('date', 'desc')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         setLoanTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        console.error('Loan Transactions Snapshot Error:', error);
       });
       return () => unsubscribe();
     } else {
@@ -150,19 +157,24 @@ export default function Loans({ user }: { user: User }) {
   };
 
   const handlePayInterest = async (loan: Loan) => {
-    const interestAmount = loan.principal * (loan.interestRate / 100);
-    await addDoc(collection(db, 'transactions'), {
-      uid: user.uid,
-      type: 'income',
-      amount: interestAmount,
-      description: `Juros Recebidos: ${loan.customerName}`,
-      category: 'Empréstimo',
-      date: new Date(manageDate).toISOString(),
-      loanId: loan.id
-    });
-    alert(`Recebimento de R$ ${interestAmount.toLocaleString('pt-BR')} (Juros) registrado!`);
-    setShowManageModal(null);
-    setManageDate(new Date().toISOString().split('T')[0]);
+    try {
+      const interestAmount = loan.principal * (loan.interestRate / 100);
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid,
+        type: 'income',
+        amount: interestAmount,
+        description: `Juros Recebidos: ${loan.customerName}`,
+        category: 'Empréstimo',
+        date: new Date(manageDate).toISOString(),
+        loanId: loan.id
+      });
+      alert(`Recebimento de R$ ${interestAmount.toLocaleString('pt-BR')} (Juros) registrado!`);
+      setShowManageModal(null);
+      setManageDate(new Date().toISOString().split('T')[0]);
+    } catch (error) {
+      console.error("Error paying interest:", error);
+      alert('Erro ao registrar pagamento de juros.');
+    }
   };
 
   const handlePayPrincipal = async (loan: Loan, amount: number) => {
@@ -171,30 +183,35 @@ export default function Loans({ user }: { user: User }) {
       return;
     }
 
-    const newPrincipal = loan.principal - amount;
-    const newPaidPrincipal = (loan.paidPrincipal || 0) + amount;
-    const isFinished = newPrincipal <= 0;
+    try {
+      const newPrincipal = loan.principal - amount;
+      const newPaidPrincipal = (loan.paidPrincipal || 0) + amount;
+      const isFinished = newPrincipal <= 0;
 
-    await updateDoc(doc(db, 'loans', loan.id!), {
-      principal: newPrincipal,
-      paidPrincipal: newPaidPrincipal,
-      status: isFinished ? 'paid' : 'active'
-    });
+      await updateDoc(doc(db, 'loans', loan.id!), {
+        principal: newPrincipal,
+        paidPrincipal: newPaidPrincipal,
+        status: isFinished ? 'paid' : 'active'
+      });
 
-    await addDoc(collection(db, 'transactions'), {
-      uid: user.uid,
-      type: 'income',
-      amount: amount,
-      description: `Amortização de Capital: ${loan.customerName}`,
-      category: 'Empréstimo',
-      date: new Date(manageDate).toISOString(),
-      loanId: loan.id
-    });
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid,
+        type: 'income',
+        amount: amount,
+        description: `Amortização de Capital: ${loan.customerName}`,
+        category: 'Empréstimo',
+        date: new Date(manageDate).toISOString(),
+        loanId: loan.id
+      });
 
-    alert(`Recebimento de R$ ${amount.toLocaleString('pt-BR')} (Capital) registrado!`);
-    setShowManageModal(null);
-    setManageAmount('');
-    setManageDate(new Date().toISOString().split('T')[0]);
+      alert(`Recebimento de R$ ${amount.toLocaleString('pt-BR')} (Capital) registrado!`);
+      setShowManageModal(null);
+      setManageAmount('');
+      setManageDate(new Date().toISOString().split('T')[0]);
+    } catch (error) {
+      console.error("Error paying principal:", error);
+      alert('Erro ao registrar amortização.');
+    }
   };
 
   const handleFinishLoan = async (loan: Loan) => {
@@ -217,33 +234,38 @@ export default function Loans({ user }: { user: User }) {
   };
 
   const handlePayInstallment = async (loan: Loan) => {
-    const monthlyAmount = calculateMonthly(loan.principal, loan.interestRate, loan.type, loan.installments);
-    const interestAmount = loan.principal * (loan.interestRate / 100);
-    const principalAmount = monthlyAmount - interestAmount;
+    try {
+      const monthlyAmount = calculateMonthly(loan.principal, loan.interestRate, loan.type, loan.installments);
+      const interestAmount = loan.principal * (loan.interestRate / 100);
+      const principalAmount = monthlyAmount - interestAmount;
 
-    const newPrincipal = loan.principal - principalAmount;
-    const newPaidPrincipal = (loan.paidPrincipal || 0) + principalAmount;
-    const isFinished = newPrincipal <= 0;
+      const newPrincipal = loan.principal - principalAmount;
+      const newPaidPrincipal = (loan.paidPrincipal || 0) + principalAmount;
+      const isFinished = newPrincipal <= 0;
 
-    await updateDoc(doc(db, 'loans', loan.id!), {
-      principal: newPrincipal,
-      paidPrincipal: newPaidPrincipal,
-      status: isFinished ? 'paid' : 'active'
-    });
+      await updateDoc(doc(db, 'loans', loan.id!), {
+        principal: newPrincipal,
+        paidPrincipal: newPaidPrincipal,
+        status: isFinished ? 'paid' : 'active'
+      });
 
-    await addDoc(collection(db, 'transactions'), {
-      uid: user.uid,
-      type: 'income',
-      amount: monthlyAmount,
-      description: `Parcela Recebida: ${loan.customerName} (Juros + Capital)`,
-      category: 'Empréstimo',
-      date: new Date(manageDate).toISOString(),
-      loanId: loan.id
-    });
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid,
+        type: 'income',
+        amount: monthlyAmount,
+        description: `Parcela Recebida: ${loan.customerName} (Juros + Capital)`,
+        category: 'Empréstimo',
+        date: new Date(manageDate).toISOString(),
+        loanId: loan.id
+      });
 
-    alert(`Recebimento de R$ ${monthlyAmount.toLocaleString('pt-BR')} registrado!`);
-    setShowManageModal(null);
-    setManageDate(new Date().toISOString().split('T')[0]);
+      alert(`Recebimento de R$ ${monthlyAmount.toLocaleString('pt-BR')} registrado!`);
+      setShowManageModal(null);
+      setManageDate(new Date().toISOString().split('T')[0]);
+    } catch (error) {
+      console.error("Error paying installment:", error);
+      alert('Erro ao registrar pagamento de parcela.');
+    }
   };
 
   return (
