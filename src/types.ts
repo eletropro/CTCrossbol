@@ -7,6 +7,7 @@ export interface UserProfile {
   address: string;
   logoUrl?: string;
   contractClauses?: string;
+  monthlyGoal?: number;
 }
 
 export interface Transaction {

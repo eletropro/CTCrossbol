@@ -53,15 +53,17 @@ export default function Home({ user }: { user: User }) {
   }, { income: 0, expense: 0 });
 
   const balance = totals.income - totals.expense;
+  const monthlyGoal = profile?.monthlyGoal || 10000;
+  const goalProgress = Math.min((totals.income / monthlyGoal) * 100, 100);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">
+          <h2 className="text-3xl font-bold text-white tracking-tight">
             Olá, {profile?.ownerName || user.email?.split('@')[0]}
           </h2>
-          <p className="text-zinc-500 text-sm">Bem-vindo ao seu painel de controle MetaCash.</p>
+          <p className="text-zinc-400 text-sm">Bem-vindo ao seu painel de controle MetaCash.</p>
         </div>
         <div className="hidden sm:block">
           <Link to="/finance" className="btn-secondary text-xs">
@@ -70,50 +72,91 @@ export default function Home({ user }: { user: User }) {
         </div>
       </header>
 
-      {/* Balance Card */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-brand-600 rounded-[2rem] p-8 sm:p-10 text-white shadow-2xl shadow-brand-200 relative overflow-hidden"
-      >
-        <div className="relative z-10 flex flex-col gap-6">
-          <div>
-            <p className="text-brand-100 text-[10px] font-bold uppercase tracking-widest mb-1">Saldo Disponível</p>
-            <h3 className="text-4xl sm:text-5xl font-bold tracking-tighter">R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Balance Card */}
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="bg-brand-500 rounded-[2rem] p-8 text-white shadow-2xl shadow-brand-500/10 relative overflow-hidden"
+        >
+          <div className="relative z-10 flex flex-col gap-6">
+            <div>
+              <p className="text-brand-100 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Disponível</p>
+              <h3 className="text-4xl font-bold tracking-tighter">R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/10">
+                <div className="flex items-center gap-1.5 text-brand-100 text-[9px] font-bold uppercase tracking-wider mb-1">
+                  <TrendingUp size={12} className="text-emerald-300" /> Entradas
+                </div>
+                <p className="text-lg font-bold">R$ {totals.income.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/10">
+                <div className="flex items-center gap-1.5 text-brand-100 text-[9px] font-bold uppercase tracking-wider mb-1">
+                  <TrendingDown size={12} className="text-rose-300" /> Saídas
+                </div>
+                <p className="text-lg font-bold">R$ {totals.expense.toLocaleString('pt-BR')}</p>
+              </div>
+            </div>
+          </div>
+          <Wallet className="absolute -right-12 -bottom-12 text-white/5" size={200} />
+        </motion.div>
+
+        {/* Monthly Goal Card */}
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="card-premium p-8 flex flex-col justify-between"
+        >
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-1">Meta de Faturamento</p>
+                <h3 className="text-3xl font-bold text-white tracking-tighter">R$ {monthlyGoal.toLocaleString('pt-BR')}</h3>
+              </div>
+              <div className="bg-brand-500/20 text-brand-400 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                {goalProgress.toFixed(0)}%
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${goalProgress}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-brand-600 to-brand-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-brand-400">R$ {totals.income.toLocaleString('pt-BR')} alcançados</span>
+                <span className="text-zinc-500">Faltam R$ {(monthlyGoal - totals.income > 0 ? monthlyGoal - totals.income : 0).toLocaleString('pt-BR')}</span>
+              </div>
+            </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/10">
-              <div className="flex items-center gap-1.5 text-brand-100 text-[9px] font-bold uppercase tracking-wider mb-1">
-                <TrendingUp size={12} className="text-emerald-400" /> Entradas
-              </div>
-              <p className="text-lg font-bold">R$ {totals.income.toLocaleString('pt-BR')}</p>
-            </div>
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/10">
-              <div className="flex items-center gap-1.5 text-brand-100 text-[9px] font-bold uppercase tracking-wider mb-1">
-                <TrendingDown size={12} className="text-rose-400" /> Saídas
-              </div>
-              <p className="text-lg font-bold">R$ {totals.expense.toLocaleString('pt-BR')}</p>
-            </div>
+          <div className="mt-6 flex items-center gap-2 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+            <Sparkles size={14} className="text-brand-400" />
+            <span>Mantenha o ritmo para bater sua meta!</span>
           </div>
-        </div>
-        <Wallet className="absolute -right-12 -bottom-12 text-white/5" size={200} />
-      </motion.div>
+        </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* AI Insights */}
         <div className="lg:col-span-1">
-          <section className="bg-brand-50 rounded-[2rem] p-8 border border-brand-100 h-full relative overflow-hidden">
+          <section className="bg-zinc-900/50 rounded-[2rem] p-8 border border-white/5 h-full relative overflow-hidden">
             <div className="relative z-10">
-              <div className="flex items-center gap-2 text-brand-700 font-bold mb-6">
+              <div className="flex items-center gap-2 text-brand-400 font-bold mb-6">
                 <Sparkles size={24} />
                 <span className="text-lg">Insight da IA</span>
               </div>
-              <p className="text-brand-900 text-lg leading-relaxed font-medium">
+              <p className="text-zinc-100 text-lg leading-relaxed font-medium">
                 "{insights}"
               </p>
             </div>
-            <Sparkles className="absolute -right-4 -bottom-4 text-brand-200/30" size={120} />
+            <Sparkles className="absolute -right-4 -bottom-4 text-brand-500/10" size={120} />
           </section>
         </div>
 
@@ -121,22 +164,22 @@ export default function Home({ user }: { user: User }) {
         <div className="lg:col-span-2">
           <section className="card-saas p-8">
             <div className="flex justify-between items-center mb-8">
-              <h4 className="text-xl font-bold text-zinc-900 tracking-tight">Atividade Recente</h4>
-              <Link to="/finance" className="text-brand-600 text-sm font-bold hover:underline">Ver tudo</Link>
+              <h4 className="text-xl font-bold text-white tracking-tight">Atividade Recente</h4>
+              <Link to="/finance" className="text-brand-400 text-sm font-bold hover:underline">Ver tudo</Link>
             </div>
             <div className="space-y-4">
               {transactions.slice(0, 5).map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-zinc-50 transition-colors border border-transparent hover:border-zinc-100">
+                <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-2xl ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <div className={`p-3 rounded-2xl ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                       {t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                     </div>
                     <div>
-                      <p className="font-bold text-zinc-900">{t.description}</p>
-                      <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
+                      <p className="font-bold text-white">{t.description}</p>
+                      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
                     </div>
                   </div>
-                  <p className={`text-lg font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  <p className={`text-lg font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR')}
                   </p>
                 </div>
