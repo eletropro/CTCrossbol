@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Transaction } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, TrendingUp, TrendingDown, Filter, X, Wallet } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Filter, X, Wallet, Edit2 } from 'lucide-react';
 
 export default function Finance({ user }: { user: User }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any | null>(null);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('income');
@@ -38,22 +39,42 @@ export default function Finance({ user }: { user: User }) {
 
     const path = 'transactions';
     try {
-      await addDoc(collection(db, path), {
+      const transactionData = {
         uid: user.uid,
         description,
         amount: parseFloat(amount),
         type,
         category,
         date: new Date().toISOString().split('T')[0]
-      });
+      };
 
-      setDescription('');
-      setAmount('');
-      setCategory('');
+      if (editingTransaction?.id) {
+        await updateDoc(doc(db, path, editingTransaction.id), transactionData);
+      } else {
+        await addDoc(collection(db, path), transactionData);
+      }
+
+      resetForm();
       setShowModal(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
+      handleFirestoreError(error, OperationType.WRITE, path);
     }
+  };
+
+  const resetForm = () => {
+    setEditingTransaction(null);
+    setDescription('');
+    setAmount('');
+    setCategory('');
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setDescription(transaction.description);
+    setAmount(transaction.amount.toString());
+    setCategory(transaction.category);
+    setType(transaction.type);
+    setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -165,9 +186,14 @@ export default function Finance({ user }: { user: User }) {
                 <p className={`text-lg font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR')}
                 </p>
-                <button onClick={() => t.id && handleDelete(t.id)} className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(t)} className="p-2 text-zinc-600 hover:text-brand-400 transition-colors">
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => t.id && handleDelete(t.id)} className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -193,8 +219,8 @@ export default function Finance({ user }: { user: User }) {
               className="bg-zinc-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto no-scrollbar border border-zinc-800"
             >
               <div className="p-6 sm:p-8 border-b border-zinc-800 flex justify-between items-center bg-zinc-900 sticky top-0 z-10">
-                <h3 className="text-xl font-bold text-white">Nova Transação</h3>
-                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
+                <h3 className="text-xl font-bold text-white">{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</h3>
+                <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={24} />
                 </button>
               </div>
@@ -259,7 +285,7 @@ export default function Finance({ user }: { user: User }) {
                 </div>
 
                 <button type="submit" className="w-full btn-primary py-4 text-lg mt-4">
-                  Salvar Transação
+                  {editingTransaction ? 'Salvar Alterações' : 'Salvar Transação'}
                 </button>
               </form>
             </motion.div>

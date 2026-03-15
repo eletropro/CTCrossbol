@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Mail, Lock, ArrowRight, Sparkles, Eye, EyeOff, Key } from 'lucide-react';
 
@@ -24,7 +25,19 @@ export default function Login() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Create initial profile document
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          companyName: '',
+          ownerName: '',
+          phone: '',
+          address: '',
+          createdAt: new Date().toISOString()
+        });
       }
     } catch (err: any) {
       console.error('Auth Error:', err.code, err.message);

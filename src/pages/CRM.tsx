@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Budget, Loan } from '../types';
 import { generateCRMMessage } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X, Search } from 'lucide-react';
+import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X, Search, Edit2 } from 'lucide-react';
 
 export default function CRM({ user }: { user: User }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -65,7 +66,7 @@ export default function CRM({ user }: { user: User }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'customers'), {
+      const customerData = {
         uid: user.uid,
         name,
         email,
@@ -74,7 +75,14 @@ export default function CRM({ user }: { user: User }) {
         address,
         notes,
         lastInteraction: new Date().toISOString()
-      });
+      };
+
+      if (editingCustomer?.id) {
+        await updateDoc(doc(db, 'customers', editingCustomer.id), customerData);
+      } else {
+        await addDoc(collection(db, 'customers'), customerData);
+      }
+      
       setShowModal(false);
       resetForm();
     } catch (error) {
@@ -83,12 +91,24 @@ export default function CRM({ user }: { user: User }) {
   };
 
   const resetForm = () => {
+    setEditingCustomer(null);
     setName('');
     setEmail('');
     setPhone('');
     setCpf('');
     setAddress('');
     setNotes('');
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setName(customer.name);
+    setEmail(customer.email || '');
+    setPhone(customer.phone);
+    setCpf(customer.cpf || '');
+    setAddress(customer.address || '');
+    setNotes(customer.notes || '');
+    setShowModal(true);
   };
 
   const handleGenerateMessage = async (customer: Customer, action: 'convince' | 'thank') => {
@@ -183,16 +203,21 @@ export default function CRM({ user }: { user: User }) {
                   <p className="text-xs text-zinc-400">{c.phone}</p>
                 </div>
               </div>
-              <button onClick={() => {
-                if (c.id && window.confirm('Tem certeza que deseja excluir este cliente?')) {
-                  deleteDoc(doc(db, 'customers', c.id)).catch(err => {
-                    console.error('Error deleting customer:', err);
-                    alert('Erro ao excluir cliente.');
-                  });
-                }
-              }} className="text-zinc-600 hover:text-red-500 transition-colors">
-                <Trash2 size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleEdit(c)} className="text-zinc-600 hover:text-brand-400 transition-colors">
+                  <Edit2 size={18} />
+                </button>
+                <button onClick={() => {
+                  if (c.id && window.confirm('Tem certeza que deseja excluir este cliente?')) {
+                    deleteDoc(doc(db, 'customers', c.id)).catch(err => {
+                      console.error('Error deleting customer:', err);
+                      alert('Erro ao excluir cliente.');
+                    });
+                  }
+                }} className="text-zinc-600 hover:text-red-500 transition-colors">
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2 mb-6 flex-1">
@@ -328,8 +353,8 @@ export default function CRM({ user }: { user: User }) {
               className="bg-zinc-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl max-h-[95vh] overflow-y-auto no-scrollbar border border-zinc-800"
             >
               <div className="flex justify-between items-center mb-8 sticky top-0 bg-zinc-900 z-10 pb-2">
-                <h3 className="text-2xl font-bold text-white">Novo Cliente</h3>
-                <button onClick={() => setShowModal(false)} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
+                <h3 className="text-2xl font-bold text-white">{editingCustomer ? 'Editar Cliente' : 'Novo Cliente'}</h3>
+                <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 text-zinc-500 hover:text-zinc-300 active:scale-90 transition-all">
                   <X size={24} />
                 </button>
               </div>
@@ -358,7 +383,7 @@ export default function CRM({ user }: { user: User }) {
                   </div>
                 </div>
                 <button type="submit" className="btn-primary w-full py-4 text-lg">
-                  Salvar Cliente
+                  {editingCustomer ? 'Salvar Alterações' : 'Salvar Cliente'}
                 </button>
               </form>
             </motion.div>

@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -24,6 +25,7 @@ import Budgets from './pages/Budgets';
 import CRM from './pages/CRM';
 import Loans from './pages/Loans';
 import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 import Login from './pages/Login';
 import InstallPrompt from './components/InstallPrompt';
 import NotificationManager from './components/NotificationManager';
@@ -41,6 +43,10 @@ function Layout({ children, user }: { children: React.ReactNode; user: User }) {
     { path: '/loans', icon: Calculator, label: 'Empréstimos' },
     { path: '/profile', icon: UserIcon, label: 'Configurações' },
   ];
+
+  if (user.email?.toLowerCase() === 'duhgostozo@gmail.com') {
+    navItems.push({ path: '/admin', icon: Shield, label: 'Admin' });
+  }
 
   return (
     <div className="min-h-screen bg-[#0F1115] text-zinc-100 flex">
@@ -171,20 +177,20 @@ function Layout({ children, user }: { children: React.ReactNode; user: User }) {
 
         {/* Bottom Navigation (Mobile Only) */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#16191E]/90 backdrop-blur-xl border-t border-white/5 flex justify-around p-3 pb-8 z-30 safe-bottom">
-          {navItems.slice(0, 5).map((item) => {
+          {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all active:scale-90 ${
+                className={`flex flex-col items-center justify-center flex-1 h-12 rounded-xl transition-all active:scale-90 ${
                   isActive ? 'text-brand-400' : 'text-zinc-500'
                 }`}
               >
                 <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-brand-500/10' : ''}`}>
-                  <item.icon size={22} />
+                  <item.icon size={20} />
                 </div>
-                <span className="text-[9px] font-bold mt-1 uppercase tracking-tighter">{item.label}</span>
+                <span className="text-[8px] font-bold mt-1 uppercase tracking-tighter truncate w-full text-center">{item.label}</span>
               </Link>
             );
           })}
@@ -242,6 +248,7 @@ export default function App() {
                     <Route path="/crm" element={<CRM user={user} />} />
                     <Route path="/loans" element={<Loans user={user} />} />
                     <Route path="/profile" element={<Profile user={user} />} />
+                    <Route path="/admin" element={<Admin user={user} />} />
                     <Route path="*" element={<Navigate to="/" />} />
                   </Routes>
                 </Layout>
