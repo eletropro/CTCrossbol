@@ -36,6 +36,7 @@ export default function Budgets({ user }: { user: User }) {
   // Form state
   const [customerId, setCustomerId] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [showCustomerResults, setShowCustomerResults] = useState(false);
   const [title, setTitle] = useState('');
   const [items, setItems] = useState<{ description: string; quantity: number; price: number }[]>([]);
@@ -83,7 +84,8 @@ export default function Budgets({ user }: { user: User }) {
   }, [user.uid]);
 
   const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(customerSearch.toLowerCase())
+    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    c.phone.includes(customerSearch)
   );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,8 +143,29 @@ export default function Budgets({ user }: { user: User }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const customer = customers.find(c => c.id === customerId);
-    if (!customer) return;
+    
+    let finalCustomerId = customerId;
+    let finalCustomerName = customerSearch;
+
+    // Grouping by phone logic
+    if (!finalCustomerId && customerPhone) {
+      const existingCustomer = customers.find(c => c.phone.replace(/\D/g, '') === customerPhone.replace(/\D/g, ''));
+      if (existingCustomer) {
+        finalCustomerId = existingCustomer.id!;
+        finalCustomerName = existingCustomer.name;
+      } else {
+        // Create new customer if phone doesn't exist
+        const docRef = await addDoc(collection(db, 'customers'), {
+          uid: user.uid,
+          name: finalCustomerName,
+          phone: customerPhone,
+          email: '',
+          notes: 'Criado via Orçamento',
+          lastInteraction: new Date().toISOString()
+        });
+        finalCustomerId = docRef.id;
+      }
+    }
 
     const totalItems = items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
     const totalMaterials = materials.reduce((acc, item) => acc + (item.quantity * item.price), 0);
@@ -150,8 +173,8 @@ export default function Budgets({ user }: { user: User }) {
 
     const budgetData = {
       uid: user.uid,
-      customerId,
-      customerName: customer.name,
+      customerId: finalCustomerId,
+      customerName: finalCustomerName,
       title,
       items,
       materials,
@@ -206,6 +229,8 @@ Assinatura do Prestador`
     setEditingBudget(budget);
     setCustomerId(budget.customerId);
     setCustomerSearch(budget.customerName);
+    const customer = customers.find(c => c.id === budget.customerId);
+    if (customer) setCustomerPhone(customer.phone);
     setTitle(budget.title);
     setItems(budget.items);
     setMaterials(budget.materials || []);
@@ -223,6 +248,7 @@ Assinatura do Prestador`
     setEditingBudget(null);
     setCustomerId('');
     setCustomerSearch('');
+    setCustomerPhone('');
     setTitle('');
     setItems([]);
     setMaterials([]);
@@ -672,13 +698,14 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                                 onClick={() => {
                                   setCustomerId(c.id!);
                                   setCustomerSearch(c.name);
+                                  setCustomerPhone(c.phone);
                                   setShowCustomerResults(false);
                                 }}
-                                className="w-full p-4 text-left hover:bg-zinc-800 active:bg-zinc-700 flex items-center justify-between border-b border-zinc-800 last:border-0"
+                                className="w-full p-4 text-left hover:bg-zinc-100 active:bg-zinc-200 flex items-center justify-between border-b border-zinc-100 last:border-0"
                               >
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-white">{c.name}</span>
-                                  <span className="text-[10px] text-zinc-400 uppercase tracking-widest">{c.phone}</span>
+                                  <span className="font-bold text-zinc-900">{c.name}</span>
+                                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest">{c.phone}</span>
                                 </div>
                                 <ChevronRight size={16} className="text-zinc-400" />
                               </button>
@@ -690,6 +717,20 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
                       )}
                     </AnimatePresence>
                   </div>
+
+                  {!customerId && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider">Telefone do Cliente (Agrupamento)</label>
+                      <input
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        className="input-saas py-3"
+                        placeholder="Ex: 5511999999999"
+                        required
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider">Título do Projeto</label>

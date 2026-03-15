@@ -21,6 +21,7 @@ export interface Transaction {
   category: string;
   date: string;
   budgetId?: string;
+  loanId?: string;
 }
 
 export interface Budget {
@@ -71,10 +72,15 @@ export interface Loan {
   uid: string;
   customerId?: string;
   customerName: string;
-  borrowerName?: string; // Keep for backward compatibility
+  borrowerName?: string;
   principal: number;
+  paidPrincipal?: number;
   interestRate: number;
   type: 'interest_only' | 'principal_interest';
+  installments?: number;
+  paymentDay?: number;
   startDate: string;
+  endDate?: string;
+  notes?: string;
   status: 'active' | 'paid';
 }

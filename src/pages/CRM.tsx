@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { Customer, Budget, Loan } from '../types';
 import { generateCRMMessage } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X } from 'lucide-react';
+import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X, Search } from 'lucide-react';
 
 export default function CRM({ user }: { user: User }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -13,6 +13,7 @@ export default function CRM({ user }: { user: User }) {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Form state
   const [name, setName] = useState('');
@@ -117,6 +118,11 @@ export default function CRM({ user }: { user: User }) {
     return { budgets: b, loans: l };
   };
 
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.phone.includes(searchTerm)
+  );
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10 sm:pb-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -124,13 +130,25 @@ export default function CRM({ user }: { user: User }) {
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Relacionamento</h2>
           <p className="text-zinc-400 text-xs sm:text-sm">Gerencie sua base de clientes e histórico de vendas.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary w-full sm:w-auto py-3 sm:py-2.5">
-          <Plus size={20} /> Novo Cliente
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <input 
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar nome ou telefone..."
+              className="input-saas pl-12 py-2.5 text-sm"
+            />
+          </div>
+          <button onClick={() => setShowModal(true)} className="btn-primary py-3 sm:py-2.5">
+            <Plus size={20} /> Novo Cliente
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {customers.map((c) => (
+        {filteredCustomers.map((c) => (
           <motion.div
             key={c.id}
             layout
