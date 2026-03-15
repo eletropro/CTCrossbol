@@ -17,23 +17,23 @@ export async function calculateRoute(
   fuelPrice: number,
   fuelConsumption: number
 ): Promise<RouteResult> {
-  const prompt = `Você é um especialista em logística e rotas.
-  Calcule a distância e o tempo de viagem entre:
-  Origem: "${origin}"
-  Destino: "${destination}"
+  const prompt = `Você é um especialista em logística.
+  Calcule a distância (km) e o tempo entre:
+  DE: "${origin}"
+  PARA: "${destination}"
   
-  Use obrigatoriamente a ferramenta Google Maps para obter dados reais e precisos.
+  USE A FERRAMENTA GOOGLE MAPS.
   
-  Retorne a resposta estritamente como um objeto JSON válido, sem blocos de código markdown, contendo:
+  Retorne APENAS um JSON no formato:
   {
-    "distanceKm": número (apenas o valor numérico em km),
-    "durationText": "texto com o tempo (ex: 30 min)",
-    "mapsUrl": "URL direta da rota no Google Maps",
-    "originCoords": [latitude, longitude],
-    "destCoords": [latitude, longitude]
+    "distanceKm": número,
+    "durationText": "tempo",
+    "mapsUrl": "link",
+    "originCoords": [lat, lng],
+    "destCoords": [lat, lng]
   }
   
-  Não escreva mais nada além do JSON.`;
+  IMPORTANTE: Se não encontrar a rota, retorne distanceKm: 0.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -46,14 +46,24 @@ export async function calculateRoute(
 
     const text = response.text || '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
     if (!jsonMatch) {
-      throw new Error("Não foi possível obter dados da rota.");
+      // Fallback: try to at least get a maps URL if JSON fails
+      return {
+        distanceKm: 0,
+        durationText: "Erro no formato",
+        fuelCost: 0,
+        mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
+      };
     }
 
     const result = JSON.parse(jsonMatch[0]);
+    const distance = parseFloat(result.distanceKm) || 0;
     
-    const distance = Number(result.distanceKm) || 0;
-    const cost = (distance / (fuelConsumption || 10)) * (fuelPrice || 5);
+    // Calculate cost safely
+    const consumption = fuelConsumption > 0 ? fuelConsumption : 10;
+    const price = fuelPrice > 0 ? fuelPrice : 0;
+    const cost = (distance / consumption) * price;
 
     return {
       distanceKm: distance,
@@ -64,10 +74,10 @@ export async function calculateRoute(
       destCoords: result.destCoords
     };
   } catch (error) {
-    console.error("Erro ao calcular rota:", error);
+    console.error("Erro crítico no cálculo:", error);
     return {
       distanceKm: 0,
-      durationText: "Erro ao calcular",
+      durationText: "Erro de conexão",
       fuelCost: 0,
       mapsUrl: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`,
     };

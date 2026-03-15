@@ -196,7 +196,6 @@ export default function Profile({ user }: { user: User }) {
 
       <form onSubmit={handleSave} className="space-y-6 sm:space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
-          {/* ... (Empresa and Contato cards remain same) ... */}
           <div className="card-saas p-6 sm:p-8 space-y-6">
             <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
               <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
@@ -283,6 +282,56 @@ export default function Profile({ user }: { user: User }) {
               </div>
             </div>
           </div>
+
+          <div className="card-saas p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <Fuel size={20} />
+              </div>
+              Configuração de Combustível
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Preço Litro (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={profile.fuelPrice || ''}
+                  onChange={(e) => setProfile({ ...profile, fuelPrice: parseFloat(e.target.value) })}
+                  className="input-saas py-3"
+                  placeholder="5.89"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Consumo (KM/L)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={profile.fuelConsumption || ''}
+                  onChange={(e) => setProfile({ ...profile, fuelConsumption: parseFloat(e.target.value) })}
+                  className="input-saas py-3"
+                  placeholder="12.5"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-zinc-500 italic">Estes valores são usados para calcular o custo de deslocamento.</p>
+          </div>
+
+          <div className="card-saas p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <FileText size={20} />
+              </div>
+              Termos do Contrato
+            </div>
+            <textarea
+              value={profile.contractClauses}
+              onChange={(e) => setProfile({ ...profile, contractClauses: e.target.value })}
+              className="input-saas min-h-[100px] py-3 text-xs"
+              placeholder="Cláusulas padrão para seus PDFs..."
+            />
+          </div>
         </div>
 
         {/* Route Calculator Section with Map */}
@@ -328,6 +377,7 @@ export default function Profile({ user }: { user: User }) {
                       {calculating ? <Loader2 className="animate-spin" size={20} /> : 'Calcular'}
                     </button>
                   </div>
+                  <p className="text-[9px] text-zinc-500 italic">Lembre-se de salvar suas configurações de combustível acima para um cálculo preciso.</p>
                   {calcError && <p className="text-[10px] text-rose-500 mt-2 font-bold">{calcError}</p>}
                 </div>
 
@@ -381,56 +431,6 @@ export default function Profile({ user }: { user: User }) {
               </MapContainer>
             </div>
           </div>
-        </div>
-
-        {/* Fuel Config Card */}
-        <div className="card-saas p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-              <Fuel size={20} />
-            </div>
-            Configuração de Combustível
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Preço do Litro (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={profile.fuelPrice || ''}
-                onChange={(e) => setProfile({ ...profile, fuelPrice: parseFloat(e.target.value) })}
-                className="input-saas py-3"
-                placeholder="Ex: 5.89"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Consumo Médio (KM/L)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={profile.fuelConsumption || ''}
-                onChange={(e) => setProfile({ ...profile, fuelConsumption: parseFloat(e.target.value) })}
-                className="input-saas py-3"
-                placeholder="Ex: 12.5"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="card-saas p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 text-emerald-500 font-bold text-sm mb-2">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-              <FileText size={20} />
-            </div>
-            Cláusulas e Termos do Contrato
-          </div>
-          <textarea
-            value={profile.contractClauses}
-            onChange={(e) => setProfile({ ...profile, contractClauses: e.target.value })}
-            className="input-saas min-h-[200px] py-3"
-            placeholder="Digite aqui as cláusulas que serão impressas nos seus contratos em PDF..."
-          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
