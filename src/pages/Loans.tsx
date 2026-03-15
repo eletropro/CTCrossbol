@@ -113,17 +113,17 @@ export default function Loans({ user }: { user: User }) {
 
       await addDoc(collection(db, 'loans'), {
         uid: user.uid,
-        customerId: finalCustomerId || undefined,
+        customerId: finalCustomerId || null,
         customerName: finalCustomerName,
         borrowerName: finalCustomerName,
         principal: principalVal,
         paidPrincipal: 0,
         interestRate: interestRateVal,
         type,
-        installments: installments ? parseInt(installments) : undefined,
+        installments: installments ? parseInt(installments) : null,
         paymentDay: parseInt(paymentDay),
         startDate: new Date(startDate).toISOString(),
-        notes,
+        notes: notes || '',
         status: 'active'
       });
       setShowModal(false);
@@ -206,14 +206,44 @@ export default function Loans({ user }: { user: User }) {
     }
   };
 
-  const calculateMonthly = (p: number, r: number, t: 'interest_only' | 'principal_interest') => {
+  const calculateMonthly = (p: number, r: number, t: 'interest_only' | 'principal_interest', inst?: number | null) => {
     const monthlyRate = r / 100;
     if (t === 'interest_only') {
       return p * monthlyRate;
     } else {
-      // Simple amortization for demo (12 months)
-      return (p * monthlyRate) + (p / 12);
+      const numInst = inst || 12;
+      return (p * monthlyRate) + (p / numInst);
     }
+  };
+
+  const handlePayInstallment = async (loan: Loan) => {
+    const monthlyAmount = calculateMonthly(loan.principal, loan.interestRate, loan.type, loan.installments);
+    const interestAmount = loan.principal * (loan.interestRate / 100);
+    const principalAmount = monthlyAmount - interestAmount;
+
+    const newPrincipal = loan.principal - principalAmount;
+    const newPaidPrincipal = (loan.paidPrincipal || 0) + principalAmount;
+    const isFinished = newPrincipal <= 0;
+
+    await updateDoc(doc(db, 'loans', loan.id!), {
+      principal: newPrincipal,
+      paidPrincipal: newPaidPrincipal,
+      status: isFinished ? 'paid' : 'active'
+    });
+
+    await addDoc(collection(db, 'transactions'), {
+      uid: user.uid,
+      type: 'income',
+      amount: monthlyAmount,
+      description: `Parcela Recebida: ${loan.customerName} (Juros + Capital)`,
+      category: 'Empréstimo',
+      date: new Date(manageDate).toISOString(),
+      loanId: loan.id
+    });
+
+    alert(`Recebimento de R$ ${monthlyAmount.toLocaleString('pt-BR')} registrado!`);
+    setShowManageModal(null);
+    setManageDate(new Date().toISOString().split('T')[0]);
   };
 
   return (
@@ -253,14 +283,6 @@ export default function Loans({ user }: { user: User }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {l.status === 'active' && (
-                  <button 
-                    onClick={() => setShowManageModal(l)}
-                    className="p-2 text-zinc-400 hover:text-emerald-500 transition-colors bg-zinc-800 rounded-xl"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                )}
                 <button onClick={() => l.id && deleteDoc(doc(db, 'loans', l.id))} className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
                   <Trash2 size={18} />
                 </button>
@@ -297,11 +319,21 @@ export default function Loans({ user }: { user: User }) {
               <div className="relative z-10">
                 <p className="text-emerald-100 text-[10px] uppercase font-bold tracking-widest mb-1">Pagamento Mensal</p>
                 <p className="text-3xl font-bold">
-                  R$ {calculateMonthly(l.principal, l.interestRate, l.type).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {calculateMonthly(l.principal, l.interestRate, l.type, l.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
               <Percent className="text-white/10 absolute -right-4 -bottom-4" size={80} />
             </div>
+
+            {l.status === 'active' && (
+              <button 
+                onClick={() => setShowManageModal(l)}
+                className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-2xl border border-zinc-700 flex items-center justify-center gap-2 transition-all active:scale-95"
+              >
+                <Edit2 size={18} className="text-emerald-500" />
+                Gerenciar Pagamentos
+              </button>
+            )}
 
             {(l.paidPrincipal || 0) > 0 && (
               <div className="space-y-2">
@@ -390,8 +422,21 @@ export default function Loans({ user }: { user: User }) {
                   </div>
 
                   <button 
+                    onClick={() => handlePayInstallment(showManageModal)}
+                    className="flex items-center gap-4 p-5 bg-emerald-600/10 hover:bg-emerald-600/20 rounded-[2rem] transition-all group border border-emerald-600/20"
+                  >
+                    <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <DollarSign size={24} />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-emerald-500">Pagar Parcela Mensal</p>
+                      <p className="text-xs text-emerald-600/70">Registra R$ {calculateMonthly(showManageModal.principal, showManageModal.interestRate, showManageModal.type, showManageModal.installments).toLocaleString('pt-BR')} (Juros + Capital).</p>
+                    </div>
+                  </button>
+
+                  <button 
                     onClick={() => handlePayInterest(showManageModal)}
-                    className="flex items-center gap-4 p-5 bg-zinc-800 hover:bg-zinc-700 rounded-[2rem] transition-all group"
+                    className="flex items-center gap-4 p-5 bg-zinc-800 hover:bg-zinc-700 rounded-[2rem] transition-all group border border-zinc-700"
                   >
                     <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Percent size={24} />
@@ -437,7 +482,7 @@ export default function Loans({ user }: { user: User }) {
                       <CheckCircle2 size={24} />
                     </div>
                     <div className="text-left">
-                      <p className="font-bold text-emerald-500">Finalizar Contrato</p>
+                      <p className="font-bold text-emerald-500">Quitar Total do Contrato</p>
                       <p className="text-xs text-emerald-600/70">Marcar empréstimo como totalmente pago.</p>
                     </div>
                   </button>
