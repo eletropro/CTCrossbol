@@ -153,11 +153,13 @@ export default function Profile({ user }: { user: User }) {
         profile.address,
         destination,
         profile.fuelPrice || 0,
-        profile.fuelConsumption || 1
+        profile.fuelConsumption || 1,
+        originCoords || undefined,
+        destCoords || undefined
       );
       
       if (res.distanceKm === 0) {
-        setCalcError("Não foi possível calcular a rota. Verifique os endereços.");
+        setCalcError("Não foi possível calcular a rota. Verifique se os endereços estão corretos ou tente clicar no mapa.");
       } else {
         setRouteResult(res);
         if (res.originCoords) setOriginCoords(res.originCoords);
