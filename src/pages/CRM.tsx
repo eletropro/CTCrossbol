@@ -5,7 +5,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Budget, Loan } from '../types';
 import { generateCRMMessage } from '../services/gemini';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X, Search, Edit2 } from 'lucide-react';
+import { Plus, MessageSquare, User as UserIcon, Trash2, Sparkles, MapPin, CreditCard, History, X, Search, Edit2, Map as MapIcon } from 'lucide-react';
 
 export default function CRM({ user }: { user: User }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -227,8 +227,19 @@ export default function CRM({ user }: { user: User }) {
                 </div>
               )}
               {c.address && (
-                <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <MapPin size={14} /> {c.address}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs text-zinc-400 truncate">
+                    <MapPin size={14} /> {c.address}
+                  </div>
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg transition-all shrink-0"
+                    title="Ver no Google Maps"
+                  >
+                    <MapIcon size={14} />
+                  </a>
                 </div>
               )}
             </div>

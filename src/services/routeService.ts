@@ -14,6 +14,29 @@ function getAi() {
   return new GoogleGenAI({ apiKey });
 }
 
+async function callGeminiWithRetry(params: any, maxRetries = 3) {
+  let lastError: any;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const ai = getAi();
+      return await ai.models.generateContent(params);
+    } catch (error: any) {
+      lastError = error;
+      const isRateLimit = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
+      
+      if (isRateLimit && i < maxRetries - 1) {
+        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+        console.warn(`Rate limit hit. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
 export async function calculateRoute(
   origin: string,
   destination: string,
@@ -22,12 +45,9 @@ export async function calculateRoute(
   originCoords?: [number, number],
   destCoords?: [number, number]
 ): Promise<RouteResult> {
-  const ai = getAi();
-  
   const originStr = originCoords ? `${originCoords[0]}, ${originCoords[1]}` : origin;
   const destStr = destCoords ? `${destCoords[0]}, ${destCoords[1]}` : destination;
 
-  // Usando gemini-2.5-flash conforme as diretrizes para Google Maps grounding
   const prompt = `Aja como um GPS profissional. Calcule a rota de carro entre:
   ORIGEM: ${originStr}
   DESTINO: ${destStr}
@@ -37,7 +57,7 @@ export async function calculateRoute(
   Exemplo: 15.5 km, 20 min`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await callGeminiWithRetry({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -102,12 +122,11 @@ export async function calculateRoute(
 }
 
 export async function searchAddress(query: string): Promise<{ address: string; coords?: [number, number] }> {
-  const ai = getAi();
   const prompt = `Localize o endereço completo e as coordenadas geográficas exatas (latitude e longitude) para: "${query}".
   Use o Google Maps. Responda com o endereço formatado e as coordenadas no formato [lat, lng].`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await callGeminiWithRetry({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -139,12 +158,11 @@ export async function searchAddress(query: string): Promise<{ address: string; c
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  const ai = getAi();
   const prompt = `Qual é o endereço exato para estas coordenadas: ${lat}, ${lng}? 
   Use o Google Maps. Responda apenas o endereço formatado.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await callGeminiWithRetry({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {

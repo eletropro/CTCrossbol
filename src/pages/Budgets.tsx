@@ -18,7 +18,8 @@ import {
   ChevronRight,
   AlertCircle,
   Edit2,
-  Trash2 as TrashIcon
+  Trash2 as TrashIcon,
+  Map as MapIcon
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -617,7 +618,20 @@ Damos por este recibo a plena e geral quitação dos valores acima mencionados, 
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h3 className="font-bold text-white text-lg leading-tight">{b.title}</h3>
-                <p className="text-xs text-zinc-500 mt-1">{b.customerName} • {formatDate(b.date)}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-zinc-500">{b.customerName} • {formatDate(b.date)}</p>
+                  {customers.find(c => c.id === b.customerId)?.address && (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customers.find(c => c.id === b.customerId)!.address!)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-zinc-500 hover:text-brand-400 transition-colors"
+                      title="Ver endereço no Maps"
+                    >
+                      <MapIcon size={12} />
+                    </a>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${

@@ -61,6 +61,7 @@ export default function Profile({ user }: { user: User }) {
   const [searchingDest, setSearchingDest] = useState(false);
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
   const [calcError, setCalcError] = useState<string | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
   
   // Map State
   const [mapCenter, setMapCenter] = useState<[number, number]>([-15.7942, -47.8822]); // Default Brasília
@@ -177,14 +178,48 @@ export default function Profile({ user }: { user: User }) {
       if (addr && addr !== `${lat}, ${lng}`) {
         setDestination(addr);
       } else {
-        setDestination(`Localização selecionada (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        setDestination(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
       }
     } catch (e) {
       console.error("Erro no clique do mapa:", e);
-      setDestination(`Localização: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      setDestination(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     } finally {
       setSearchingDest(false);
     }
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setCalcError("Geolocalização não é suportada pelo seu navegador.");
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapCenter([latitude, longitude]);
+        setDestCoords([latitude, longitude]);
+        
+        try {
+          const addr = await reverseGeocode(latitude, longitude);
+          setDestination(addr || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        } catch (e) {
+          setDestination(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        setGettingLocation(false);
+        let msg = "Erro ao obter localização.";
+        if (error.code === 1) msg = "Permissão de localização negada. Ative nas configurações do navegador.";
+        else if (error.code === 2) msg = "Localização indisponível.";
+        else if (error.code === 3) msg = "Tempo esgotado ao obter localização.";
+        setCalcError(msg);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleCalculate = async () => {
@@ -451,7 +486,18 @@ export default function Profile({ user }: { user: User }) {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <p className="text-xs text-zinc-400">Clique no mapa para definir o destino ou digite o endereço abaixo.</p>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <p className="text-xs text-zinc-400">Clique no mapa para definir o destino ou use sua localização atual.</p>
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={gettingLocation}
+                  className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 transition-all bg-emerald-500/10 px-3 py-1.5 rounded-full"
+                >
+                  {gettingLocation ? <Loader2 className="animate-spin" size={12} /> : <Navigation size={12} />}
+                  Minha Localização Atual
+                </button>
+              </div>
               
               <div className="space-y-4">
                 <div>
@@ -507,9 +553,9 @@ export default function Profile({ user }: { user: User }) {
                       href={routeResult.mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl text-xs font-bold transition-all mt-2"
+                      className="flex items-center justify-center gap-3 w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl text-sm font-bold transition-all mt-4 shadow-lg shadow-emerald-500/20 group"
                     >
-                      <MapIcon size={16} /> Ver no Google Maps <ArrowRight size={14} />
+                      <MapIcon size={20} /> Iniciar Rota no Google Maps <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                   </div>
                 )}
