@@ -65,6 +65,14 @@ export const Landing = () => {
           <span className="text-xl font-black tracking-tighter hidden sm:block">CT CROSSBOL</span>
         </div>
         <div className="flex items-center gap-6">
+          <a 
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tenant?.address || 'CT CROSSBOL')}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-sm font-bold uppercase tracking-widest hover:text-neon transition-colors hidden md:block"
+          >
+            Localização
+          </a>
           <Link to="/login" className="text-sm font-bold uppercase tracking-widest hover:text-neon transition-colors">Entrar</Link>
           <Link 
             to="/login" 
@@ -198,12 +206,10 @@ export const Landing = () => {
       {/* Stats Section */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-neon/5 -skew-y-3 origin-left" />
-        <div className="max-w-7xl mx-auto px-6 relative z-10 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 grid grid-cols-2 md:grid-cols-2 gap-12 text-center">
           {[
             { label: "Quadras", value: "03" },
-            { label: "Atletas", value: "500+" },
-            { label: "Partidas/Mês", value: "1.2k" },
-            { label: "Avaliação", value: "4.9/5" }
+            { label: "Atletas", value: "500+" }
           ].map((stat, i) => (
             <div key={i}>
               <div className="text-5xl md:text-6xl font-black text-white mb-2">{stat.value}</div>
@@ -226,7 +232,14 @@ export const Landing = () => {
             <div className="flex gap-12 text-sm font-bold uppercase tracking-widest text-gray-500">
               <a href="#" className="hover:text-neon transition-colors">Quadras</a>
               <a href="#" className="hover:text-neon transition-colors">Preços</a>
-              <a href="#" className="hover:text-neon transition-colors">Localização</a>
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tenant?.address || 'CT CROSSBOL')}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-neon transition-colors"
+              >
+                Localização
+              </a>
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 text-sm text-gray-600">
