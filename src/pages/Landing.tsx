@@ -6,6 +6,26 @@ import { doc, getDoc, collection, getDocs, limit, query } from 'firebase/firesto
 import { db } from '../firebase';
 import { Tenant } from '../types';
 
+const VolleyballIcon = ({ className, size = 24 }: { className?: string, size?: number }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 2a10 10 0 0 1 10 10" />
+    <path d="M2 12a10 10 0 0 1 10-10" />
+    <path d="M12 22a10 10 0 0 1-10-10" />
+    <path d="M22 12a10 10 0 0 1-10 10" />
+  </svg>
+);
+
 export const Landing = () => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,33 +56,52 @@ export const Landing = () => {
 
   return (
     <div className="min-h-screen bg-[#050a05] text-white overflow-x-hidden font-sans selection:bg-neon selection:text-black">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-neon rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(57,255,20,0.4)]">
+            <VolleyballIcon className="text-black" size={20} />
+          </div>
+          <span className="text-xl font-black tracking-tighter hidden sm:block">CT CROSSBOL</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <Link to="/login" className="text-sm font-bold uppercase tracking-widest hover:text-neon transition-colors">Entrar</Link>
+          <Link 
+            to="/login" 
+            className="px-6 py-2.5 bg-neon text-black text-xs font-black rounded-lg shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:scale-105 transition-all"
+          >
+            RESERVAR
+          </Link>
+        </div>
+      </nav>
+
       {/* Hero Section with 3D-like Background */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden pt-20">
         {/* Realistic Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1624880351068-2eb5a3d3ce07?q=80&w=2000&auto=format&fit=crop" 
-            alt="Futvôlei Court" 
-            className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow"
+            src="https://images.unsplash.com/photo-1612872086822-4421f172c523?q=80&w=2000&auto=format&fit=crop" 
+            alt="Vôlei de Praia Court" 
+            className="w-full h-full object-cover opacity-50 scale-100"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050a05]/80 via-transparent to-[#050a05]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#050a05] via-transparent to-[#050a05]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050a05] via-transparent to-[#050a05]" />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
 
         {/* Floating Elements for 3D Effect */}
-        <div className="absolute top-1/4 left-10 w-64 h-64 bg-neon/10 blur-[100px] rounded-full animate-float" />
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-white/5 blur-[120px] rounded-full animate-float-delayed" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-[150%] w-64 h-64 bg-neon/10 blur-[100px] rounded-full animate-float pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/2 translate-x-[50%] w-96 h-96 bg-white/5 blur-[120px] rounded-full animate-float-delayed pointer-events-none" />
         
-        <div className="relative z-10 max-w-7xl mx-auto text-center">
+        <div className="relative z-10 w-full max-w-7xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="mb-6"
+            className="mb-8"
           >
-            <div className="inline-block p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl mb-8">
-              <Dribbble className="text-neon w-12 h-12" />
+            <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
+              <VolleyballIcon className="text-neon w-10 h-10 sm:w-12 sm:h-12" />
             </div>
           </motion.div>
 
@@ -71,11 +110,11 @@ export const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <h1 className="text-5xl sm:text-7xl md:text-9xl font-black tracking-tighter mb-4 leading-none">
+            <h1 className="text-6xl sm:text-8xl md:text-[10rem] font-black tracking-tighter mb-6 leading-[0.85] flex flex-col items-center">
               <span className="text-white">CT</span>
               <span className="text-neon neon-text-green">CROSSBOL</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 font-light tracking-wide max-w-3xl mx-auto mb-12 uppercase">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 font-medium tracking-wider max-w-2xl mx-auto mb-12 uppercase px-4">
               A melhor experiência em <span className="text-white font-bold">Futvôlei</span>, <span className="text-white font-bold">Vôlei</span> e <span className="text-white font-bold">Beach Tennis</span>
             </p>
           </motion.div>
