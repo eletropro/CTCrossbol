@@ -454,33 +454,39 @@ export const BookingPage = () => {
   };
 
   return (
-    <div className="p-6 md:p-12 max-w-6xl mx-auto space-y-8">
-      <header className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 md:p-12 max-w-6xl mx-auto space-y-6 sm:space-y-8">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter neon-text">RESERVAR QUADRA</h1>
-          <p className="text-gray-400">Escolha a quadra, o horário e jogue.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter neon-text">RESERVAR QUADRA</h1>
+          <p className="text-gray-400 text-xs sm:text-sm md:text-base">Escolha a quadra, o horário e jogue.</p>
         </div>
         {step > 1 && (
           <button 
             onClick={() => setStep(step - 1)}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors self-start sm:self-auto text-sm sm:text-base"
           >
-            <ArrowLeft size={20} /> Voltar
+            <ArrowLeft size={18} /> Voltar
           </button>
         )}
       </header>
 
       {/* Steps Indicator */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center justify-start sm:justify-center gap-2 sm:gap-4 mb-6 sm:mb-8 overflow-x-auto pb-4 no-scrollbar">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div key={i} className="flex items-center gap-2 shrink-0">
             <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all",
+              "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all",
               step >= i ? "bg-neon text-black neon-shadow" : "bg-white/10 text-gray-500"
             )}>
               {i}
             </div>
-            {i < 3 && <div className={cn("w-12 h-0.5", step > i ? "bg-neon" : "bg-white/10")} />}
+            <span className={cn(
+              "text-[10px] sm:text-xs font-bold uppercase tracking-widest",
+              step >= i ? "text-neon" : "text-gray-500"
+            )}>
+              {i === 1 ? 'Quadra' : i === 2 ? 'Horário' : 'Pagamento'}
+            </span>
+            {i < 3 && <div className={cn("w-4 sm:w-8 h-0.5 mx-1", step > i ? "bg-neon" : "bg-white/10")} />}
           </div>
         ))}
       </div>
@@ -555,18 +561,18 @@ export const BookingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <GlassCard className="lg:col-span-1">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-bold">Data</h3>
+              <GlassCard className="lg:col-span-1 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="font-bold text-sm sm:text-base">Data</h3>
                   <div className="flex gap-2">
-                    <button className="p-1 hover:text-neon"><ChevronLeft size={20} /></button>
-                    <button className="p-1 hover:text-neon"><ChevronRight size={20} /></button>
+                    <button className="p-1 hover:text-neon transition-colors"><ChevronLeft size={18} /></button>
+                    <button className="p-1 hover:text-neon transition-colors"><ChevronRight size={18} /></button>
                   </div>
                 </div>
-                <div className="grid grid-cols-7 gap-2 text-center text-xs mb-4">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] sm:text-xs mb-2 sm:mb-4">
                   {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, idx) => <div key={idx} className="text-gray-500">{d}</div>)}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {Array.from({ length: 31 }).map((_, i) => {
                     const day = i + 1;
                     const isSelected = day === selectedDate.getDate();
@@ -579,7 +585,7 @@ export const BookingPage = () => {
                           setSelectedDate(newDate);
                         }}
                         className={cn(
-                          "aspect-square rounded-lg flex items-center justify-center text-sm transition-all",
+                          "aspect-square rounded-lg flex items-center justify-center text-xs sm:text-sm transition-all",
                           isSelected ? "bg-neon text-black font-bold neon-shadow" : "hover:bg-white/10"
                         )}
                       >
@@ -590,18 +596,18 @@ export const BookingPage = () => {
                 </div>
               </GlassCard>
 
-              <GlassCard className="lg:col-span-2">
-                <h3 className="font-bold mb-6">Duração e Horário</h3>
+              <GlassCard className="lg:col-span-2 p-4 sm:p-6">
+                <h3 className="font-bold text-sm sm:text-base mb-4 sm:mb-6">Duração e Horário</h3>
                 
-                <div className="mb-8">
-                  <p className="text-sm text-gray-400 mb-4 uppercase tracking-widest">Duração do Jogo</p>
-                  <div className="flex gap-4">
+                <div className="mb-6 sm:mb-8">
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-3 sm:mb-4 uppercase tracking-widest">Duração do Jogo</p>
+                  <div className="flex flex-wrap gap-2 sm:gap-4">
                     {[1, 1.5, 2, 3].map((h) => (
                       <button
                         key={h}
                         onClick={() => setDuration(h)}
                         className={cn(
-                          "px-6 py-3 rounded-xl font-bold transition-all border",
+                          "px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all border",
                           duration === h ? "bg-neon text-black border-neon neon-shadow" : "glass border-white/10 hover:bg-white/5"
                         )}
                       >
@@ -611,8 +617,8 @@ export const BookingPage = () => {
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-400 mb-4 uppercase tracking-widest">Horários Disponíveis</p>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-8">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-3 sm:mb-4 uppercase tracking-widest">Horários Disponíveis</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
                   {timeSlots.map((time) => {
                     const isOccupied = existingBookings.some(b => {
                       const bTime = new Date(b.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -625,7 +631,7 @@ export const BookingPage = () => {
                         disabled={isOccupied}
                         onClick={() => setSelectedTime(time)}
                         className={cn(
-                          "py-4 rounded-xl border-2 font-bold transition-all relative overflow-hidden",
+                          "py-3 sm:py-4 rounded-xl border-2 text-xs sm:text-sm font-bold transition-all relative overflow-hidden",
                           selectedTime === time 
                             ? "border-neon bg-neon text-black neon-shadow" 
                             : isOccupied
@@ -636,7 +642,7 @@ export const BookingPage = () => {
                         {time}
                         {isOccupied && (
                           <div className="absolute inset-0 flex items-center justify-center bg-red-500/10">
-                            <span className="text-[10px] uppercase font-black rotate-12">Ocupado</span>
+                            <span className="text-[8px] sm:text-[10px] uppercase font-black rotate-12">Ocupado</span>
                           </div>
                         )}
                       </button>
@@ -644,22 +650,22 @@ export const BookingPage = () => {
                   })}
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold flex items-center gap-2 text-lg">
-                      <Clock size={20} className="text-neon" />
+                    <h3 className="font-bold flex items-center gap-2 text-base sm:text-lg">
+                      <Clock size={18} className="text-neon" />
                       Status da Agenda
                     </h3>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-neon/10 rounded-full border border-neon/20">
-                      <div className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-                      <span className="text-[10px] font-black text-neon uppercase tracking-tighter">Ao Vivo</span>
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-neon/10 rounded-full border border-neon/20">
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-neon animate-pulse" />
+                      <span className="text-[8px] sm:text-[10px] font-black text-neon uppercase tracking-tighter">Ao Vivo</span>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {existingBookings.length === 0 ? (
-                      <div className="col-span-full p-8 glass border-dashed border-white/10 rounded-2xl text-center">
-                        <p className="text-sm text-gray-500 italic">Nenhuma reserva para este dia ainda. Seja o primeiro!</p>
+                      <div className="col-span-full p-6 sm:p-8 glass border-dashed border-white/10 rounded-2xl text-center">
+                        <p className="text-xs sm:text-sm text-gray-500 italic">Nenhuma reserva para este dia ainda. Seja o primeiro!</p>
                       </div>
                     ) : (
                       existingBookings.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((booking, idx) => (
@@ -668,21 +674,21 @@ export const BookingPage = () => {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.1 }}
-                          className="flex items-center justify-between p-4 glass border-white/5 rounded-2xl hover:bg-white/5 transition-colors"
+                          className="flex items-center justify-between p-3 sm:p-4 glass border-white/5 rounded-2xl hover:bg-white/5 transition-colors"
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                              <Dribbble size={24} className="text-neon" />
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                              <Dribbble size={20} className="text-neon sm:w-6 sm:h-6" />
                             </div>
                             <div>
-                              <div className="font-black text-lg tracking-tight">
+                              <div className="font-black text-base sm:text-lg tracking-tight">
                                 {new Date(booking.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                               </div>
-                              <div className="text-xs text-gray-400 font-medium">{booking.userName}</div>
+                              <div className="text-[10px] sm:text-xs text-gray-400 font-medium">{booking.userName}</div>
                             </div>
                           </div>
                           <div className={cn(
-                            "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border",
+                            "px-2 sm:px-3 py-1 rounded-lg text-[8px] sm:text-[10px] font-black uppercase tracking-widest border",
                             booking.status === 'confirmed' 
                               ? "bg-green-500/10 text-green-500 border-green-500/20" 
                               : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
@@ -717,20 +723,20 @@ export const BookingPage = () => {
             exit={{ opacity: 0, x: -20 }}
             className="max-w-2xl mx-auto"
           >
-            <GlassCard className="space-y-8">
-              <div className="flex justify-between items-start border-b border-white/10 pb-6">
+            <GlassCard className="space-y-6 sm:space-y-8 p-4 sm:p-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-white/10 pb-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-1">Resumo da Reserva</h2>
-                  <p className="text-gray-400">{selectedCourt?.name}</p>
-                  <p className="text-sm text-neon mt-1">Atleta: {auth.currentUser?.displayName || 'Usuário'}</p>
+                  <h2 className="text-xl sm:text-2xl font-bold mb-1">Resumo da Reserva</h2>
+                  <p className="text-sm sm:text-base text-gray-400">{selectedCourt?.name}</p>
+                  <p className="text-xs sm:text-sm text-neon mt-1">Atleta: {auth.currentUser?.displayName || 'Usuário'}</p>
                 </div>
-                <div className="text-right">
-                  <div className="text-neon font-black text-2xl">{formatCurrency(calculateTotal())}</div>
+                <div className="text-left sm:text-right w-full sm:w-auto">
+                  <div className="text-neon font-black text-xl sm:text-2xl">{formatCurrency(calculateTotal())}</div>
                   {appliedCoupon && (
                     <p className="text-[10px] text-green-500 font-bold uppercase">Cupom Aplicado: {appliedCoupon.code}</p>
                   )}
-                  <p className="text-xs text-gray-500">Total a pagar</p>
-                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold border border-red-500/30">
+                  <p className="text-[10px] sm:text-xs text-gray-500">Total a pagar</p>
+                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-[10px] sm:text-xs font-bold border border-red-500/30">
                     <Clock size={12} />
                     Expira em: {formatTimeLeft(timeLeft)}
                   </div>
@@ -780,14 +786,14 @@ export const BookingPage = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="font-bold">Método de Pagamento</h3>
+                <h3 className="font-bold text-sm sm:text-base">Método de Pagamento</h3>
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="p-6 glass border-neon/50 bg-neon/5 flex flex-col items-center gap-4 text-center">
-                    <div className="w-48 h-48 bg-white p-2 rounded-xl flex items-center justify-center">
+                  <div className="p-4 sm:p-6 glass border-neon/50 bg-neon/5 flex flex-col items-center gap-4 text-center">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 bg-white p-2 rounded-xl flex items-center justify-center">
                       {loading || !pixData ? (
                         <div className="flex flex-col items-center gap-4">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon"></div>
-                          <p className="text-[10px] text-black font-bold uppercase">Gerando PIX...</p>
+                          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-neon"></div>
+                          <p className="text-[8px] sm:text-[10px] text-black font-bold uppercase">Gerando PIX...</p>
                         </div>
                       ) : pixData?.qrCodeBase64 ? (
                         <img 
@@ -796,18 +802,18 @@ export const BookingPage = () => {
                           className="w-full h-full"
                         />
                       ) : (
-                        <div className="text-black text-xs text-center p-4">
+                        <div className="text-black text-[10px] sm:text-xs text-center p-2 sm:p-4">
                           Erro ao carregar QR Code. Tente novamente.
                         </div>
                       )}
                     </div>
                     <div className="space-y-2 w-full">
-                      <p className="text-xs text-gray-400 uppercase tracking-widest">
+                      <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest">
                         {paymentStatus === 'approved' ? 'Pagamento Aprovado!' : pixData ? 'Escaneie o QR Code acima ou copie o código' : 'Aguarde a geração do PIX...'}
                       </p>
                       {paymentStatus === 'approved' && (
-                        <div className="flex items-center justify-center gap-2 text-green-500 font-bold">
-                          <CheckCircle2 size={20} />
+                        <div className="flex items-center justify-center gap-2 text-green-500 font-bold text-sm sm:text-base">
+                          <CheckCircle2 size={18} className="sm:w-5 sm:h-5" />
                           <span>Confirmado!</span>
                         </div>
                       )}
@@ -816,13 +822,13 @@ export const BookingPage = () => {
                           readOnly 
                           value={pixData?.copyPaste || ''} 
                           placeholder="Gerando código..."
-                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono outline-none"
+                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-[10px] sm:text-xs font-mono outline-none"
                         />
                         <button 
                           disabled={!pixData}
                           onClick={() => pixData && copyToClipboard(pixData.copyPaste)}
                           className={cn(
-                            "px-4 py-2 rounded-lg text-xs font-bold transition-all min-w-[80px]",
+                            "px-3 sm:px-4 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all min-w-[70px] sm:min-w-[80px]",
                             copied ? "bg-green-500 text-white" : "bg-neon text-black",
                             !pixData && "opacity-50 cursor-not-allowed"
                           )}
@@ -835,7 +841,7 @@ export const BookingPage = () => {
                 </div>
 
                 {statusMessage && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-bold text-center">
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] sm:text-xs font-bold text-center">
                     {statusMessage}
                   </div>
                 )}
@@ -868,7 +874,7 @@ export const BookingPage = () => {
                   }
                 }}
                 disabled={loading}
-                className="w-full py-4 bg-neon text-black font-bold rounded-2xl neon-shadow hover:scale-[1.02] transition-transform disabled:opacity-50"
+                className="w-full py-3 sm:py-4 bg-neon text-black font-bold rounded-2xl neon-shadow hover:scale-[1.02] transition-transform disabled:opacity-50 text-sm sm:text-base"
               >
                 {loading ? 'Processando...' : paymentStatus === 'approved' ? 'Finalizar Reserva' : 'Já realizei o pagamento'}
               </button>

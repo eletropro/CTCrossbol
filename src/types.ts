@@ -5,6 +5,7 @@ export interface UserProfile {
   email: string;
   displayName: string;
   role: UserRole;
+  phone?: string;
   tenantId?: string; // Only for admins or clients associated with a specific CT
   createdAt: string;
 }

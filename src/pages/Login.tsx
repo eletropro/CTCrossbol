@@ -117,27 +117,27 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 relative overflow-hidden py-12">
       {/* Background Elements */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-neon/10 blur-[100px] rounded-full" />
-      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-neon/10 blur-[100px] rounded-full" />
+      <div className="absolute top-1/4 -left-20 w-64 sm:w-96 h-64 sm:h-96 bg-neon/10 blur-[80px] sm:blur-[100px] rounded-full" />
+      <div className="absolute bottom-1/4 -right-20 w-64 sm:w-96 h-64 sm:h-96 bg-neon/10 blur-[80px] sm:blur-[100px] rounded-full" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md z-10"
       >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-neon rounded-2xl flex items-center justify-center mx-auto mb-4 neon-shadow">
-            <Dribbble className="text-black" size={32} />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-neon rounded-2xl flex items-center justify-center mx-auto mb-4 neon-shadow">
+            <Dribbble className="text-black" size={28} />
           </div>
-          <h1 className="text-3xl font-black tracking-tighter mb-2">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter mb-2">
             {isLogin ? 'BEM-VINDO DE VOLTA' : 'CRIE SUA CONTA'}
           </h1>
-          <p className="text-gray-400">Acesse a melhor plataforma de gestão esportiva.</p>
+          <p className="text-gray-400 text-sm sm:text-base">Acesse a melhor plataforma de gestão esportiva.</p>
         </div>
 
-        <GlassCard className="space-y-6">
+        <GlassCard className="space-y-5 sm:space-y-6 p-6 sm:p-8">
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-medium text-center">
               {error}

@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, cn } from '../lib/utils';
 import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
@@ -117,17 +117,17 @@ export const AdminPlans = () => {
   };
 
   return (
-    <div className="p-8 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-sm"
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-xs sm:text-sm"
           >
-            <ChevronLeft size={16} /> Voltar ao Dashboard
+            <ChevronLeft size={14} sm:size={16} /> Voltar ao Dashboard
           </button>
-          <h1 className="text-3xl font-black tracking-tighter neon-text uppercase">PLANOS E ASSINATURAS</h1>
-          <p className="text-gray-400">Crie pacotes de horas e planos mensais para fidelizar atletas.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text uppercase">PLANOS E ASSINATURAS</h1>
+          <p className="text-gray-400 text-xs sm:text-sm sm:text-base">Crie pacotes de horas e planos mensais para fidelizar atletas.</p>
         </div>
         <button 
           onClick={() => {
@@ -142,9 +142,9 @@ export const AdminPlans = () => {
             });
             setIsEditing(true);
           }}
-          className="px-6 py-3 bg-neon text-black rounded-xl font-bold neon-shadow flex items-center gap-2 hover:scale-105 transition-transform"
+          className="px-6 py-3 bg-neon text-black rounded-xl text-sm font-bold neon-shadow flex items-center justify-center gap-2 hover:scale-105 transition-transform w-full sm:w-auto"
         >
-          <Plus size={20} /> Novo Plano
+          <Plus size={18} sm:size={20} /> Novo Plano
         </button>
       </header>
 
@@ -155,48 +155,48 @@ export const AdminPlans = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <GlassCard className="max-w-2xl mx-auto space-y-6">
+            <GlassCard className="max-w-2xl mx-auto space-y-6 p-4 sm:p-8">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">{currentPlan.id ? 'Editar Plano' : 'Novo Plano'}</h2>
+                <h2 className="text-lg sm:text-xl font-bold">{currentPlan.id ? 'Editar Plano' : 'Novo Plano'}</h2>
                 <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-white">
-                  <X size={24} />
+                  <X size={20} sm:size={24} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Nome do Plano</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Nome do Plano</label>
                   <input 
                     type="text" 
                     value={currentPlan.name}
                     onChange={e => setCurrentPlan({...currentPlan, name: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="Ex: Mensal VIP"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Tipo</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Tipo</label>
                   <select 
                     value={currentPlan.type}
                     onChange={e => setCurrentPlan({...currentPlan, type: e.target.value as 'package' | 'subscription'})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                   >
                     <option value="package">Pacote de Horas</option>
                     <option value="subscription">Assinatura Mensal</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Preço (R$)</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Preço (R$)</label>
                   <input 
                     type="number" 
                     value={currentPlan.price}
                     onChange={e => setCurrentPlan({...currentPlan, price: parseFloat(e.target.value)})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="450"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Destaque</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Destaque</label>
                   <div className="flex items-center gap-2 h-[50px]">
                     <input 
                       type="checkbox" 
@@ -204,11 +204,11 @@ export const AdminPlans = () => {
                       onChange={e => setCurrentPlan({...currentPlan, popular: e.target.checked})}
                       className="w-5 h-5 accent-neon"
                     />
-                    <span className="text-sm text-gray-300">Marcar como "Mais Popular"</span>
+                    <span className="text-xs sm:text-sm text-gray-300">Marcar como "Mais Popular"</span>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Status</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Status</label>
                   <div className="flex items-center gap-2 h-[50px]">
                     <input 
                       type="checkbox" 
@@ -216,51 +216,51 @@ export const AdminPlans = () => {
                       onChange={e => setCurrentPlan({...currentPlan, active: e.target.checked})}
                       className="w-5 h-5 accent-neon"
                     />
-                    <span className="text-sm text-gray-300">Plano Ativo (Visível para clientes)</span>
+                    <span className="text-xs sm:text-sm text-gray-300">Plano Ativo (Visível para clientes)</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <label className="text-sm text-gray-400">Benefícios / Características</label>
+                <label className="text-xs sm:text-sm text-gray-400">Benefícios / Características</label>
                 <div className="flex gap-2">
                   <input 
                     type="text" 
                     value={newFeature}
                     onChange={e => setNewFeature(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && addFeature()}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="Adicionar benefício..."
                   />
                   <button 
                     onClick={addFeature}
                     className="px-4 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
                   >
-                    <Plus size={20} />
+                    <Plus size={18} sm:size={20} />
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {currentPlan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2 px-3 py-1 bg-neon/10 text-neon rounded-full text-sm">
+                    <div key={i} className="flex items-center gap-2 px-3 py-1 bg-neon/10 text-neon rounded-full text-xs sm:text-sm">
                       {feature}
                       <button onClick={() => removeFeature(i)} className="hover:text-white">
-                        <X size={14} />
+                        <X size={12} sm:size={14} />
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4">
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl font-bold"
+                  className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl text-sm font-bold order-2 sm:order-1"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="px-6 py-2 bg-neon text-black rounded-xl font-bold neon-shadow flex items-center gap-2"
+                  className="px-6 py-2 bg-neon text-black rounded-xl text-sm font-bold neon-shadow flex items-center justify-center gap-2 order-1 sm:order-2"
                 >
                   <Save size={18} /> Salvar Plano
                 </button>
@@ -270,7 +270,7 @@ export const AdminPlans = () => {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
         {plans.map((plan) => (
           <GlassCard 
             key={plan.id} 
@@ -341,7 +341,3 @@ export const AdminPlans = () => {
     </div>
   );
 };
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}

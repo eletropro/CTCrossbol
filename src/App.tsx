@@ -6,6 +6,7 @@ import { auth, db } from './firebase';
 import { UserProfile } from './types';
 import { Sidebar } from './components/Sidebar';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from './lib/utils';
 
 // Real Pages
 import { Landing } from './pages/Landing';
@@ -81,7 +82,10 @@ export default function App() {
       <div className="flex min-h-screen bg-black text-white overflow-x-hidden">
         {user && <Sidebar isAdmin={user.role === 'admin'} />}
         
-        <main className="flex-1 relative">
+        <main className={cn(
+          "flex-1 relative min-h-screen",
+          user && "pt-20 lg:pt-0"
+        )}>
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={<Landing />} />

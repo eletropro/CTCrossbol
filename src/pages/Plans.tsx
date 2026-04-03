@@ -5,7 +5,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 import { GlassCard } from '../components/GlassCard';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, cn } from '../lib/utils';
 
 interface Plan {
   id: string;
@@ -45,10 +45,10 @@ export const Plans = () => {
   };
 
   return (
-    <div className="p-8 md:p-12 max-w-7xl mx-auto space-y-12">
+    <div className="p-4 sm:p-8 md:p-12 max-w-7xl mx-auto space-y-8 sm:space-y-12">
       <header className="text-center space-y-4">
-        <h1 className="text-5xl font-black tracking-tighter neon-text">NOSSOS PLANOS</h1>
-        <p className="text-gray-400 text-xl max-w-2xl mx-auto">
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tighter neon-text">NOSSOS PLANOS</h1>
+        <p className="text-gray-400 text-base sm:text-xl max-w-2xl mx-auto">
           Escolha o plano que melhor se adapta ao seu ritmo e aproveite benefícios exclusivos no CTCrossBol Reserva.
         </p>
       </header>
@@ -58,13 +58,13 @@ export const Plans = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon"></div>
         </div>
       ) : plans.length === 0 ? (
-        <GlassCard className="text-center py-20">
+        <GlassCard className="text-center py-12 sm:py-20">
           <Star className="mx-auto text-gray-600 mb-4" size={48} />
           <h3 className="text-xl font-bold mb-2">Nenhum plano disponível no momento</h3>
           <p className="text-gray-400">Fique atento! Em breve teremos novidades e planos exclusivos para você.</p>
         </GlassCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.id}
@@ -73,9 +73,10 @@ export const Plans = () => {
               transition={{ delay: i * 0.1 }}
             >
               <GlassCard 
-                className={`relative h-full flex flex-col p-8 border-2 transition-all duration-500 hover:scale-[1.02] ${
+                className={cn(
+                  "relative h-full flex flex-col p-6 sm:p-8 border-2 transition-all duration-500 hover:scale-[1.02]",
                   plan.popular ? 'border-neon bg-neon/5' : 'border-white/10'
-                }`}
+                )}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-neon text-black text-[10px] font-black px-4 py-1 rounded-full neon-shadow uppercase tracking-widest">
@@ -83,32 +84,33 @@ export const Plans = () => {
                   </div>
                 )}
 
-                <div className="mb-8">
-                  <h3 className="text-2xl font-black mb-2 uppercase tracking-tight">{plan.name}</h3>
+                <div className="mb-6 sm:mb-8">
+                  <h3 className="text-xl sm:text-2xl font-black mb-2 uppercase tracking-tight">{plan.name}</h3>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white">{formatCurrency(plan.price)}</span>
-                    <span className="text-gray-500 font-bold">/{plan.type === 'monthly' ? 'mês' : 'ano'}</span>
+                    <span className="text-3xl sm:text-4xl font-black text-white">{formatCurrency(plan.price)}</span>
+                    <span className="text-gray-500 font-bold text-sm">/{plan.type === 'monthly' ? 'mês' : 'ano'}</span>
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-4 mb-8">
+                <div className="flex-1 space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                   {plan.features.map((feature, idx) => (
                     <div key={idx} className="flex items-start gap-3">
-                      <div className="mt-1 p-0.5 bg-neon/20 rounded-full">
-                        <Check size={14} className="text-neon" />
+                      <div className="mt-1 p-0.5 bg-neon/20 rounded-full shrink-0">
+                        <Check size={12} className="text-neon" />
                       </div>
-                      <span className="text-gray-300 text-sm leading-tight">{feature}</span>
+                      <span className="text-gray-300 text-xs sm:text-sm leading-tight">{feature}</span>
                     </div>
                   ))}
                 </div>
 
                 <button
                   onClick={() => handleSubscribe(plan)}
-                  className={`w-full py-4 rounded-2xl font-black transition-all duration-300 ${
+                  className={cn(
+                    "w-full py-3 sm:py-4 rounded-2xl font-black transition-all duration-300 text-sm sm:text-base",
                     plan.popular 
                       ? 'bg-neon text-black neon-shadow hover:shadow-[0_0_30px_rgba(57,255,20,0.4)]' 
                       : 'bg-white/10 text-white hover:bg-white/20'
-                  }`}
+                  )}
                 >
                   ASSINAR AGORA
                 </button>
@@ -119,32 +121,32 @@ export const Plans = () => {
       )}
 
       {/* Benefits Section */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12">
-        <div className="flex items-center gap-4 p-6 glass rounded-3xl border-white/5">
-          <div className="p-3 bg-neon/10 rounded-2xl">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 pt-8 sm:pt-12">
+        <div className="flex items-center gap-4 p-5 sm:p-6 glass rounded-3xl border-white/5">
+          <div className="p-3 bg-neon/10 rounded-2xl shrink-0">
             <Zap className="text-neon" size={24} />
           </div>
           <div>
-            <h4 className="font-bold">Reserva Prioritária</h4>
-            <p className="text-xs text-gray-500">Acesso antecipado aos horários mais disputados.</p>
+            <h4 className="font-bold text-sm sm:text-base">Reserva Prioritária</h4>
+            <p className="text-[10px] sm:text-xs text-gray-500">Acesso antecipado aos horários mais disputados.</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 p-6 glass rounded-3xl border-white/5">
-          <div className="p-3 bg-neon/10 rounded-2xl">
+        <div className="flex items-center gap-4 p-5 sm:p-6 glass rounded-3xl border-white/5">
+          <div className="p-3 bg-neon/10 rounded-2xl shrink-0">
             <Star className="text-neon" size={24} />
           </div>
           <div>
-            <h4 className="font-bold">Eventos Exclusivos</h4>
-            <p className="text-xs text-gray-500">Convites para torneios e clínicas fechadas.</p>
+            <h4 className="font-bold text-sm sm:text-base">Eventos Exclusivos</h4>
+            <p className="text-[10px] sm:text-xs text-gray-500">Convites para torneios e clínicas fechadas.</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 p-6 glass rounded-3xl border-white/5">
-          <div className="p-3 bg-neon/10 rounded-2xl">
+        <div className="flex items-center gap-4 p-5 sm:p-6 glass rounded-3xl border-white/5 sm:col-span-2 lg:col-span-1">
+          <div className="p-3 bg-neon/10 rounded-2xl shrink-0">
             <Shield className="text-neon" size={24} />
           </div>
           <div>
-            <h4 className="font-bold">Cancelamento Grátis</h4>
-            <p className="text-xs text-gray-500">Flexibilidade total para mudar seus planos.</p>
+            <h4 className="font-bold text-sm sm:text-base">Cancelamento Grátis</h4>
+            <p className="text-[10px] sm:text-xs text-gray-500">Flexibilidade total para mudar seus planos.</p>
           </div>
         </div>
       </section>

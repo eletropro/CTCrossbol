@@ -73,13 +73,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isAdmin }) => {
               !isOpen && "hidden lg:flex"
             )}
           >
-            <div className="p-8 flex items-center gap-3">
-              <div className="w-10 h-10 bg-neon rounded-xl flex items-center justify-center neon-shadow">
+            <div className="p-6 sm:p-8 flex items-center gap-3">
+              <div className="w-10 h-10 bg-neon rounded-xl flex items-center justify-center neon-shadow shrink-0">
                 <Dribbble className="text-black" size={24} />
               </div>
-              <h1 className="text-xl font-bold tracking-tighter neon-text">
-                CROSSBOL<span className="text-neon">.</span>
-              </h1>
+              <div className="flex flex-col">
+                <h1 className="text-lg font-black tracking-tighter neon-text leading-none">
+                  CT<span className="text-neon">CROSSBOL</span>
+                </h1>
+                <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Reserva</span>
+              </div>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">

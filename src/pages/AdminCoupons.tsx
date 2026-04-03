@@ -100,17 +100,17 @@ export const AdminCoupons = () => {
   };
 
   return (
-    <div className="p-8 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-sm"
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-xs sm:text-sm"
           >
-            <ChevronLeft size={16} /> Voltar ao Dashboard
+            <ChevronLeft size={14} className="sm:w-4 sm:h-4" /> Voltar ao Dashboard
           </button>
-          <h1 className="text-3xl font-black tracking-tighter neon-text uppercase">CUPONS E PROMOÇÕES</h1>
-          <p className="text-gray-400">Crie incentivos para seus atletas e aumente suas reservas.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text uppercase">CUPONS E PROMOÇÕES</h1>
+          <p className="text-gray-400 text-xs sm:text-sm sm:text-base">Crie incentivos para seus atletas e aumente suas reservas.</p>
         </div>
         <button 
           onClick={() => {
@@ -125,9 +125,9 @@ export const AdminCoupons = () => {
             });
             setIsEditing(true);
           }}
-          className="px-6 py-3 bg-neon text-black rounded-xl font-bold neon-shadow flex items-center gap-2 hover:scale-105 transition-transform"
+          className="px-6 py-3 bg-neon text-black rounded-xl text-sm font-bold neon-shadow flex items-center justify-center gap-2 hover:scale-105 transition-transform w-full sm:w-auto"
         >
-          <Plus size={20} /> Novo Cupom
+          <Plus size={18} className="sm:w-5 sm:h-5" /> Novo Cupom
         </button>
       </header>
 
@@ -138,71 +138,71 @@ export const AdminCoupons = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <GlassCard className="max-w-2xl mx-auto space-y-6">
+            <GlassCard className="max-w-2xl mx-auto space-y-6 p-4 sm:p-8">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">{currentCoupon.id ? 'Editar Cupom' : 'Novo Cupom'}</h2>
+                <h2 className="text-lg sm:text-xl font-bold">{currentCoupon.id ? 'Editar Cupom' : 'Novo Cupom'}</h2>
                 <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-white">
-                  <X size={24} />
+                  <X size={20} className="sm:w-6 sm:h-6" />
                 </button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Código do Cupom</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Código do Cupom</label>
                   <input 
                     type="text" 
                     value={currentCoupon.code}
                     onChange={e => setCurrentCoupon({...currentCoupon, code: e.target.value.toUpperCase()})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="Ex: VERAO20"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Tipo de Desconto</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Tipo de Desconto</label>
                   <select 
                     value={currentCoupon.type}
                     onChange={e => setCurrentCoupon({...currentCoupon, type: e.target.value as 'percentage' | 'fixed'})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                   >
                     <option value="percentage">Porcentagem (%)</option>
                     <option value="fixed">Valor Fixo (R$)</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Valor do Desconto</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Valor do Desconto</label>
                   <input 
                     type="number" 
                     value={currentCoupon.value}
                     onChange={e => setCurrentCoupon({...currentCoupon, value: parseFloat(e.target.value)})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="20"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Limite de Uso (0 para ilimitado)</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Limite de Uso (0 para ilimitado)</label>
                   <input 
                     type="number" 
                     value={currentCoupon.usageLimit}
                     onChange={e => setCurrentCoupon({...currentCoupon, usageLimit: parseInt(e.target.value)})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                     placeholder="100"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Data de Expiração</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Data de Expiração</label>
                   <input 
                     type="date" 
                     value={currentCoupon.expiryDate}
                     onChange={e => setCurrentCoupon({...currentCoupon, expiryDate: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Status</label>
+                  <label className="text-xs sm:text-sm text-gray-400">Status</label>
                   <select 
                     value={currentCoupon.status}
                     onChange={e => setCurrentCoupon({...currentCoupon, status: e.target.value as 'active' | 'expired'})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                   >
                     <option value="active">Ativo</option>
                     <option value="expired">Expirado</option>
@@ -210,16 +210,16 @@ export const AdminCoupons = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4">
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl font-bold"
+                  className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl text-sm font-bold order-2 sm:order-1"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="px-6 py-2 bg-neon text-black rounded-xl font-bold neon-shadow flex items-center gap-2"
+                  className="px-6 py-2 bg-neon text-black rounded-xl text-sm font-bold neon-shadow flex items-center justify-center gap-2 order-1 sm:order-2"
                 >
                   <Save size={18} /> Salvar Cupom
                 </button>
@@ -229,7 +229,7 @@ export const AdminCoupons = () => {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {coupons.map((coupon) => (
           <GlassCard key={coupon.id} className="relative group overflow-hidden">
             <div className="absolute top-0 right-0 p-4">

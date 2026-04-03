@@ -8,18 +8,22 @@ import {
   XCircle, 
   AlertCircle,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  X,
+  Copy,
+  Smartphone
 } from 'lucide-react';
 import { GlassCard } from '../components/GlassCard';
-import { formatCurrency, formatDate, formatTime } from '../lib/utils';
+import { formatCurrency, formatDate, formatTime, cn } from '../lib/utils';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 import { Booking } from '../types';
 import { AnimatePresence } from 'motion/react';
-import { X, Copy, Smartphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const History = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -123,10 +127,10 @@ export const History = () => {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-4xl mx-auto">
       <header>
-        <h1 className="text-3xl font-black tracking-tighter neon-text uppercase">MINHAS RESERVAS</h1>
-        <p className="text-gray-400">Acompanhe seu histórico e status de pagamento.</p>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text uppercase">MINHAS RESERVAS</h1>
+        <p className="text-gray-400 text-sm sm:text-base">Acompanhe seu histórico e status de pagamento.</p>
       </header>
 
       {loading ? (
@@ -138,36 +142,42 @@ export const History = () => {
           />
         </div>
       ) : bookings.length === 0 ? (
-        <GlassCard className="text-center py-20">
+        <GlassCard className="text-center py-12 sm:py-20">
           <Calendar className="mx-auto text-gray-600 mb-4" size={48} />
           <h3 className="text-xl font-bold mb-2">Nenhuma reserva encontrada</h3>
-          <p className="text-gray-400 mb-8">Você ainda não realizou nenhuma reserva em nosso CT.</p>
-          <button className="px-8 py-3 bg-neon text-black rounded-xl font-bold neon-shadow">
+          <p className="text-gray-400 mb-8 text-sm sm:text-base">Você ainda não realizou nenhuma reserva em nosso CT.</p>
+          <button 
+            onClick={() => navigate('/booking')}
+            className="w-full sm:w-auto px-8 py-3 bg-neon text-black rounded-xl font-bold neon-shadow"
+          >
             Fazer Minha Primeira Reserva
           </button>
         </GlassCard>
       ) : (
         <div className="space-y-4">
           {bookings.map((booking, i) => (
-            <GlassCard key={i} className="flex flex-col md:flex-row items-center justify-between gap-6 group">
-              <div className="flex items-center gap-6 w-full md:w-auto">
-                <div className="w-16 h-16 bg-neon/10 rounded-2xl flex items-center justify-center text-neon shrink-0">
-                  <Dribbble size={32} />
+            <GlassCard key={i} className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 group p-4 sm:p-6">
+              <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-neon/10 rounded-2xl flex items-center justify-center text-neon shrink-0">
+                  <Dribbble size={24} className="sm:hidden" />
+                  <Dribbble size={32} className="hidden sm:block" />
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Atleta: {booking.userName || 'Usuário'}</div>
-                  <div className="font-bold text-lg">{formatDate(booking.startTime)}</div>
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Clock size={14} /> {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                <div className="flex-1">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 truncate">Atleta: {booking.userName || 'Usuário'}</div>
+                  <div className="font-bold text-base sm:text-lg">{formatDate(booking.startTime)}</div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+                    <Clock size={12} className="sm:hidden" />
+                    <Clock size={14} className="hidden sm:block" />
+                    {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between w-full md:w-auto md:gap-12">
-                <div className="text-right">
-                  <div className="text-xl font-black text-white">{formatCurrency(booking.totalPrice)}</div>
+              <div className="flex items-center justify-between w-full sm:w-auto sm:gap-8 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
+                <div className="text-left sm:text-right">
+                  <div className="text-lg sm:text-xl font-black text-white">{formatCurrency(booking.totalPrice)}</div>
                   <div className={cn(
-                    "text-[10px] font-bold uppercase tracking-widest flex items-center justify-end gap-1",
+                    "text-[10px] font-bold uppercase tracking-widest flex items-center sm:justify-end gap-1",
                     booking.status === 'confirmed' ? "text-green-500" : 
                     booking.status === 'cancelled' ? "text-red-500" : "text-blue-500"
                   )}>
@@ -179,7 +189,7 @@ export const History = () => {
                 </div>
                 <button 
                   onClick={() => setSelectedBooking(booking)}
-                  className="p-3 glass border-white/10 hover:text-neon transition-colors"
+                  className="p-2 sm:p-3 glass border-white/10 hover:text-neon transition-colors"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -326,7 +336,3 @@ export const History = () => {
     </div>
   );
 };
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}

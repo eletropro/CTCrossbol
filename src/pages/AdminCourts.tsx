@@ -6,7 +6,7 @@ import { GlassCard } from '../components/GlassCard';
 import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Court } from '../types';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, cn } from '../lib/utils';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 
 export const AdminCourts = () => {
@@ -125,81 +125,81 @@ export const AdminCourts = () => {
   };
 
   return (
-    <div className="p-8 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-sm"
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors mb-2 text-xs sm:text-sm"
           >
-            <ChevronLeft size={16} /> Voltar ao Dashboard
+            <ChevronLeft size={14} className="sm:w-4 sm:h-4" /> Voltar ao Dashboard
           </button>
-          <h1 className="text-3xl font-black tracking-tighter neon-text uppercase">GESTÃO DE QUADRAS</h1>
-          <p className="text-gray-400">Adicione, edite ou remova quadras do seu CT.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text uppercase">GESTÃO DE QUADRAS</h1>
+          <p className="text-gray-400 text-xs sm:text-sm">Adicione, edite ou remova quadras do seu CT.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button 
             onClick={handleResetToDefaults}
-            className="px-6 py-3 glass border-white/10 text-gray-400 rounded-xl font-bold flex items-center gap-2 hover:text-white transition-colors"
+            className="px-4 sm:px-6 py-2 sm:py-3 glass border-white/10 text-gray-400 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:text-white transition-colors"
           >
-            <RotateCcw size={20} /> Resetar Padrões
+            <RotateCcw size={18} className="sm:w-5 sm:h-5" /> Resetar Padrões
           </button>
           <button 
             onClick={() => {
               setCurrentCourt({ name: '', description: '', basePrice: 0, active: true, images: [] });
               setIsEditing(true);
             }}
-            className="px-6 py-3 bg-neon text-black rounded-xl font-bold neon-shadow flex items-center gap-2 hover:scale-105 transition-transform"
+            className="px-6 py-3 bg-neon text-black rounded-xl text-sm font-bold neon-shadow flex items-center justify-center gap-2 hover:scale-105 transition-transform"
           >
-            <Plus size={20} /> Nova Quadra
+            <Plus size={18} className="sm:w-5 sm:h-5" /> Nova Quadra
           </button>
         </div>
       </header>
 
       {isEditing && (
-        <GlassCard className="max-w-2xl mx-auto space-y-6">
-          <h2 className="text-xl font-bold">{currentCourt.id ? 'Editar Quadra' : 'Nova Quadra'}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard className="max-w-2xl mx-auto space-y-6 p-4 sm:p-8">
+          <h2 className="text-lg sm:text-xl font-bold">{currentCourt.id ? 'Editar Quadra' : 'Nova Quadra'}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Nome da Quadra</label>
+              <label className="text-xs sm:text-sm text-gray-400">Nome da Quadra</label>
               <input 
                 type="text" 
                 value={currentCourt.name}
                 onChange={e => setCurrentCourt({...currentCourt, name: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                 placeholder="Ex: Quadra 1"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Preço por Hora (R$)</label>
+              <label className="text-xs sm:text-sm text-gray-400">Preço por Hora (R$)</label>
               <input 
                 type="number" 
                 value={currentCourt.basePrice}
                 onChange={e => setCurrentCourt({...currentCourt, basePrice: parseFloat(e.target.value)})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon"
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon"
                 placeholder="120.00"
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <label className="text-sm text-gray-400">Descrição</label>
+              <label className="text-xs sm:text-sm text-gray-400">Descrição</label>
               <textarea 
                 value={currentCourt.description}
                 onChange={e => setCurrentCourt({...currentCourt, description: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-neon h-24"
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-neon h-24"
                 placeholder="Descreva a quadra..."
               />
             </div>
           </div>
-          <div className="flex justify-end gap-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
             <button 
               onClick={() => setIsEditing(false)}
-              className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl font-bold"
+              className="px-6 py-2 glass border-white/10 hover:bg-white/5 rounded-xl text-sm font-bold"
             >
               Cancelar
             </button>
             <button 
               onClick={handleSave}
-              className="px-6 py-2 bg-neon text-black rounded-xl font-bold neon-shadow"
+              className="px-6 py-2 bg-neon text-black rounded-xl text-sm font-bold neon-shadow"
             >
               Salvar Alterações
             </button>
@@ -207,7 +207,7 @@ export const AdminCourts = () => {
         </GlassCard>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {courts.map(court => (
           <GlassCard key={court.id} className="group">
             <div className="aspect-video bg-white/5 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
@@ -256,7 +256,3 @@ export const AdminCourts = () => {
     </div>
   );
 };
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}

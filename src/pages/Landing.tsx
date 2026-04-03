@@ -35,7 +35,7 @@ export const Landing = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050a05] text-white overflow-hidden font-sans selection:bg-neon selection:text-black">
+    <div className="min-h-screen bg-[#050a05] text-white overflow-x-hidden font-sans selection:bg-neon selection:text-black">
       {/* Hero Section with 3D-like Background */}
       <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
         {/* Realistic Background Image with Overlay */}
@@ -71,7 +71,7 @@ export const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-4 leading-none">
+            <h1 className="text-5xl sm:text-7xl md:text-9xl font-black tracking-tighter mb-4 leading-none">
               <span className="text-white">CT</span>
               <span className="text-neon neon-text-green">CROSSBOL</span>
             </h1>
