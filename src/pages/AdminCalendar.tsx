@@ -28,6 +28,8 @@ export const AdminCalendar = () => {
     const q = query(collection(db, 'tenants', 'main-ct', 'bookings'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking)));
+    }, (error) => {
+      console.error("Erro ao carregar reservas:", error);
     });
 
     // Fetch courts

@@ -154,7 +154,7 @@ export const History = () => {
                   <Dribbble size={32} />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Quadra 01 - Society</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Atleta: {booking.userName || 'Usuário'}</div>
                   <div className="font-bold text-lg">{formatDate(booking.startTime)}</div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock size={14} /> {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
@@ -211,6 +211,21 @@ export const History = () => {
               </div>
 
               <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Atleta</span>
+                    <span className="font-bold">{selectedBooking.userName || 'Usuário'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Data e Hora</span>
+                    <span className="font-bold">{formatDate(selectedBooking.startTime)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Valor Total</span>
+                    <span className="font-bold text-neon">{formatCurrency(selectedBooking.totalPrice)}</span>
+                  </div>
+                </div>
+
                 {selectedBooking.status === 'pending' && (
                   <div className="p-6 bg-neon/5 border border-neon/20 rounded-2xl flex flex-col items-center gap-4">
                     <div className="w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center">
@@ -250,17 +265,6 @@ export const History = () => {
                     </div>
                   </div>
                 )}
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Data e Hora</span>
-                    <span className="font-bold">{formatDate(selectedBooking.startTime)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Valor Total</span>
-                    <span className="font-bold text-neon">{formatCurrency(selectedBooking.totalPrice)}</span>
-                  </div>
-                </div>
 
                 <div className="flex flex-col gap-3">
                   {statusMessage && (

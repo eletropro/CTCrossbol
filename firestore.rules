@@ -14,13 +14,16 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        (request.auth.token.email == "duhgostozo@gmail.com" && request.auth.token.email_verified == true)
+        request.auth.token.email == "duhgostozo@gmail.com" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
 
     function isTenantOwner(tenantId) {
-      return isAuthenticated() && get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
     }
 
     function isValidUser(data) {
@@ -44,31 +47,38 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
+    match /{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.email == "duhgostozo@gmail.com";
+    }
+
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
-      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data);
-      allow update: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow write: if isOwner(uid) || isAdmin();
     }
 
     match /tenants/{tenantId} {
-      allow read: if true; // Publicly readable for discovery
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isTenantOwner(tenantId);
+      allow read: if true;
+      allow write: if isAdmin() || isTenantOwner(tenantId);
       
+      match /{allSubcollections=**} {
+        allow read, write: if isAdmin() || isTenantOwner(tenantId);
+      }
+
       match /courts/{courtId} {
         allow read: if true;
-        allow write: if isAdmin() || isTenantOwner(tenantId);
       }
       
       match /bookings/{bookingId} {
-        allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isTenantOwner(tenantId) || isAdmin());
+        allow read: if isAuthenticated() && (
+          resource.data.status in ['confirmed', 'paid'] || 
+          isOwner(resource.data.userId) || 
+          isAdmin()
+        );
         allow create: if isAuthenticated() && isValidBooking(request.resource.data) && (request.resource.data.userId == request.auth.uid || isAdmin());
-        allow update: if isAuthenticated() && (isOwner(resource.data.userId) || isTenantOwner(tenantId) || isAdmin());
       }
       
-      match /coupons/{couponId} {
-        allow read: if isAuthenticated();
-        allow write: if isAdmin() || isTenantOwner(tenantId);
+      match /plans/{planId} {
+        allow read: if true;
       }
     }
   }

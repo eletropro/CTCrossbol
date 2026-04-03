@@ -8,6 +8,7 @@
         "uid": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
+        "phone": { "type": "string" },
         "role": { "type": "string", "enum": ["admin", "client"] },
         "tenantId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -21,9 +22,17 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "logo": { "type": "string" },
         "address": { "type": "string" },
         "ownerId": { "type": "string" },
-        "settings": { "type": "object" },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "openingTime": { "type": "string" },
+            "closingTime": { "type": "string" },
+            "workingDays": { "type": "array", "items": { "type": "integer" } }
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "ownerId", "createdAt"]
@@ -36,7 +45,9 @@
         "id": { "type": "string" },
         "tenantId": { "type": "string" },
         "name": { "type": "string" },
+        "description": { "type": "string" },
         "basePrice": { "type": "number" },
+        "images": { "type": "array", "items": { "type": "string" } },
         "active": { "type": "boolean" }
       },
       "required": ["id", "tenantId", "name", "basePrice"]
@@ -50,12 +61,35 @@
         "tenantId": { "type": "string" },
         "courtId": { "type": "string" },
         "userId": { "type": "string" },
+        "userName": { "type": "string" },
         "startTime": { "type": "string", "format": "date-time" },
         "endTime": { "type": "string", "format": "date-time" },
         "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "paid"] },
-        "totalPrice": { "type": "number" }
+        "totalPrice": { "type": "number" },
+        "paymentId": { "type": "string" },
+        "mercadopagoPaymentId": { "type": "string" },
+        "pixCopyPaste": { "type": "string" },
+        "pixQrCodeBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "tenantId", "courtId", "userId", "startTime", "endTime", "status", "totalPrice"]
+      "required": ["id", "tenantId", "courtId", "userId", "userName", "startTime", "endTime", "status", "totalPrice", "createdAt"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Discount coupon",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "code": { "type": "string" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "discountValue": { "type": "number" },
+        "minPurchase": { "type": "number" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "usageLimit": { "type": "integer" },
+        "usageCount": { "type": "integer" }
+      },
+      "required": ["id", "tenantId", "code", "discountType", "discountValue", "expiryDate", "usageCount"]
     }
   },
   "firestore": {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -20,6 +20,7 @@ import { AdminSettings } from './pages/AdminSettings';
 import { AdminCoupons } from './pages/AdminCoupons';
 import { AdminPlans } from './pages/AdminPlans';
 import { History } from './pages/History';
+import { Plans } from './pages/Plans';
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -28,18 +29,31 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        const isAdminEmail = firebaseUser.email === 'duhgostozo@gmail.com';
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        
         if (userDoc.exists()) {
-          setUser(userDoc.data() as UserProfile);
+          const userData = userDoc.data() as UserProfile;
+          // Force admin role if it's the owner email but role is not admin
+          if (isAdminEmail && userData.role !== 'admin') {
+            const updatedUser = { ...userData, role: 'admin' as const };
+            setUser(updatedUser);
+            // Update in background
+            setDoc(doc(db, 'users', firebaseUser.uid), { role: 'admin' }, { merge: true });
+          } else {
+            setUser(userData);
+          }
         } else {
           const newUser: UserProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
             displayName: firebaseUser.displayName || 'Usuário',
-            role: 'client',
+            role: isAdminEmail ? 'admin' : 'client',
             createdAt: new Date().toISOString()
           };
           setUser(newUser);
+          // Save new user
+          setDoc(doc(db, 'users', firebaseUser.uid), newUser);
         }
       } else {
         setUser(null);
@@ -123,6 +137,11 @@ export default function App() {
               <Route 
                 path="/history" 
                 element={user ? <History /> : <Navigate to="/login" />} 
+              />
+              
+              <Route 
+                path="/plans" 
+                element={user ? <Plans /> : <Navigate to="/login" />} 
               />
               
               {/* Fallback */}

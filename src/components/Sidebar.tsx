@@ -46,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isAdmin }) => {
   const clientLinks = [
     { to: '/booking', icon: Calendar, label: 'Reservar' },
     { to: '/history', icon: LayoutDashboard, label: 'Minhas Reservas' },
+    { to: '/plans', icon: Package, label: 'Planos' },
   ];
 
   const links = isAdmin ? adminLinks : clientLinks;

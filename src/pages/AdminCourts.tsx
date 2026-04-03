@@ -7,6 +7,7 @@ import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'f
 import { db } from '../firebase';
 import { Court } from '../types';
 import { formatCurrency } from '../lib/utils';
+import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 
 export const AdminCourts = () => {
   const navigate = useNavigate();
@@ -26,32 +27,47 @@ export const AdminCourts = () => {
   }, []);
 
   const fetchCourts = async () => {
-    const courtsSnapshot = await getDocs(collection(db, 'tenants', 'main-ct', 'courts'));
-    setCourts(courtsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Court)));
-    setLoading(false);
+    try {
+      const courtsSnapshot = await getDocs(collection(db, 'tenants', 'main-ct', 'courts'));
+      setCourts(courtsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Court)));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, 'tenants/main-ct/courts');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
+    setLoading(true);
     try {
-      if (currentCourt.id) {
-        await updateDoc(doc(db, 'tenants', 'main-ct', 'courts', currentCourt.id), currentCourt);
+      const { id, ...courtData } = currentCourt;
+      if (id) {
+        await updateDoc(doc(db, 'tenants', 'main-ct', 'courts', id), courtData);
       } else {
         await addDoc(collection(db, 'tenants', 'main-ct', 'courts'), {
-          ...currentCourt,
+          ...courtData,
           tenantId: 'main-ct'
         });
       }
       setIsEditing(false);
       fetchCourts();
+      alert('Alterações salvas com sucesso!');
     } catch (error) {
-      console.error(error);
+      handleFirestoreError(error, OperationType.WRITE, 'tenants/main-ct/courts');
+      alert('Erro ao salvar alterações.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja excluir esta quadra?')) {
-      await deleteDoc(doc(db, 'tenants', 'main-ct', 'courts', id));
-      fetchCourts();
+      try {
+        await deleteDoc(doc(db, 'tenants', 'main-ct', 'courts', id));
+        fetchCourts();
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `tenants/main-ct/courts/${id}`);
+      }
     }
   };
 
@@ -61,9 +77,27 @@ export const AdminCourts = () => {
       try {
         // Update existing courts or create new ones if none exist
         const defaultCourts = [
-          { name: 'Quadra 1', description: 'Quadra de areia', basePrice: 1, active: true, images: [] },
-          { name: 'Quadra 2', description: 'Quadra de areia', basePrice: 1, active: true, images: [] },
-          { name: 'Quadra 3', description: 'Quadra de areia', basePrice: 1, active: true, images: [] },
+          { 
+            name: 'Quadra 1 - Futvôlei', 
+            description: 'Quadra profissional de areia para a prática de futvôlei de alto nível.', 
+            basePrice: 80, 
+            active: true, 
+            images: ['https://images.unsplash.com/photo-1593787424264-3a95c8d7a3eb?q=80&w=800&auto=format&fit=crop'] 
+          },
+          { 
+            name: 'Quadra 2 - Beach Tennis', 
+            description: 'Quadra oficial de areia para Beach Tennis com iluminação LED.', 
+            basePrice: 60, 
+            active: true, 
+            images: ['https://images.unsplash.com/photo-1616611751333-31627914876b?q=80&w=800&auto=format&fit=crop'] 
+          },
+          { 
+            name: 'Quadra 3 - Vôlei de Areia', 
+            description: 'Quadra de areia versátil para vôlei de praia e treinamentos funcionais.', 
+            basePrice: 70, 
+            active: true, 
+            images: ['https://images.unsplash.com/photo-1519766304817-4f37bda74a26?q=80&w=800&auto=format&fit=crop'] 
+          },
         ];
 
         // Delete all current courts first to avoid duplicates if that's the intent of a "reset"
@@ -177,7 +211,16 @@ export const AdminCourts = () => {
         {courts.map(court => (
           <GlassCard key={court.id} className="group">
             <div className="aspect-video bg-white/5 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
-              <Dribbble size={48} className="text-white/10" />
+              {court.images && court.images.length > 0 ? (
+                <img 
+                  src={court.images[0]} 
+                  alt={court.name} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <Dribbble size={48} className="text-white/10" />
+              )}
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={() => {

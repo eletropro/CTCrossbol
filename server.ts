@@ -5,20 +5,26 @@ import dotenv from "dotenv";
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
+import firebaseConfig from './firebase-applet-config.json';
 
 dotenv.config();
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: "core-gearbox-416216",
+    credential: admin.credential.applicationDefault(),
+    projectId: firebaseConfig.projectId
   });
 }
-const firestoreDb = getFirestore("ai-studio-5b1194ed-38ca-4467-be2d-e039fc98df7e");
+const firestoreDb = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId);
 
 // Initialize Mercado Pago
+const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+if (!mpAccessToken) {
+  console.warn("MERCADOPAGO_ACCESS_TOKEN is not set. Payments will not work.");
+}
 const mpClient = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '' 
+  accessToken: mpAccessToken || '' 
 });
 const mpPayment = new Payment(mpClient);
 
@@ -30,7 +36,39 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "Crossbol Manager API" });
+    res.json({ status: "ok", service: "CT Crossbol API" });
+  });
+
+  // Cleanup Expired Bookings
+  app.post("/api/bookings/cleanup", async (req, res) => {
+    try {
+      const bookingsRef = firestoreDb.collection('tenants').doc('main-ct').collection('bookings');
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      
+      const q = await bookingsRef
+        .where('status', '==', 'pending')
+        .where('createdAt', '<', thirtyMinsAgo)
+        .get();
+      
+      if (!q.empty) {
+        const batch = firestoreDb.batch();
+        q.docs.forEach(doc => {
+          batch.update(doc.ref, { status: 'cancelled', cancellationReason: 'timeout' });
+        });
+        await batch.commit();
+        console.log(`Cancelled ${q.size} expired bookings.`);
+      }
+      
+      res.json({ cancelledCount: q.size });
+    } catch (error: any) {
+      console.error("Cleanup Error Details:", {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        details: error.details
+      });
+      res.status(500).json({ error: error.message });
+    }
   });
 
   // Mercado Pago: Check Payment Status

@@ -21,25 +21,77 @@ import {
   Area
 } from 'recharts';
 import { GlassCard } from '../components/GlassCard';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, cn } from '../lib/utils';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 
 const data = [
-  { name: 'Seg', revenue: 4000, bookings: 24 },
-  { name: 'Ter', revenue: 3000, bookings: 18 },
-  { name: 'Qua', revenue: 2000, bookings: 12 },
-  { name: 'Qui', revenue: 2780, bookings: 15 },
-  { name: 'Sex', revenue: 1890, bookings: 10 },
-  { name: 'Sáb', revenue: 2390, bookings: 14 },
-  { name: 'Dom', revenue: 3490, bookings: 21 },
+  { name: 'Seg', revenue: 0, bookings: 0 },
+  { name: 'Ter', revenue: 0, bookings: 0 },
+  { name: 'Qua', revenue: 0, bookings: 0 },
+  { name: 'Qui', revenue: 0, bookings: 0 },
+  { name: 'Sex', revenue: 0, bookings: 0 },
+  { name: 'Sáb', revenue: 0, bookings: 0 },
+  { name: 'Dom', revenue: 0, bookings: 0 },
 ];
 
 export const Dashboard = () => {
-  const stats = [
-    { label: 'Faturamento Total', value: 'R$ 12.450,00', change: '+12.5%', icon: DollarSign, positive: true },
-    { label: 'Novas Reservas', value: '142', change: '+8.2%', icon: CalendarIcon, positive: true },
-    { label: 'Novos Clientes', value: '28', change: '-2.4%', icon: Users, positive: false },
-    { label: 'Ticket Médio', value: 'R$ 85,00', change: '+5.1%', icon: TrendingUp, positive: true },
-  ];
+  const [stats, setStats] = useState([
+    { label: 'Faturamento Total', value: 'R$ 0,00', change: '0%', icon: DollarSign, positive: true },
+    { label: 'Novas Reservas', value: '0', change: '0%', icon: CalendarIcon, positive: true },
+    { label: 'Novos Clientes', value: '0', change: '0%', icon: Users, positive: true },
+    { label: 'Ticket Médio', value: 'R$ 0,00', change: '0%', icon: TrendingUp, positive: true },
+  ]);
+
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch total bookings
+        const bookingsSnap = await getDocs(collection(db, 'tenants', 'main-ct', 'bookings'));
+        const totalBookings = bookingsSnap.size;
+        
+        // Fetch total users
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const totalUsers = usersSnap.size;
+        
+        // Calculate total revenue
+        let totalRevenue = 0;
+        bookingsSnap.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'paid' || data.status === 'confirmed') {
+            totalRevenue += data.totalPrice || 0;
+          }
+        });
+
+        setStats([
+          { label: 'Faturamento Total', value: formatCurrency(totalRevenue), change: '0%', icon: DollarSign, positive: true },
+          { label: 'Novas Reservas', value: totalBookings.toString(), change: '0%', icon: CalendarIcon, positive: true },
+          { label: 'Novos Clientes', value: totalUsers.toString(), change: '0%', icon: Users, positive: true },
+          { label: 'Ticket Médio', value: formatCurrency(totalBookings > 0 ? totalRevenue / totalBookings : 0), change: '0%', icon: TrendingUp, positive: true },
+        ]);
+
+        // Fetch recent activity
+        const recentQ = query(collection(db, 'tenants', 'main-ct', 'bookings'), orderBy('createdAt', 'desc'), limit(5));
+        const recentSnap = await getDocs(recentQ);
+        setRecentActivity(recentSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          time: new Date(doc.data().startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          amount: doc.data().totalPrice
+        })));
+
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, 'dashboard-stats');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="p-8 space-y-8">
@@ -136,21 +188,21 @@ export const Dashboard = () => {
           <button className="text-neon text-sm font-bold hover:underline">Ver todas</button>
         </div>
         <div className="space-y-4">
-          {[1, 2, 3, 4].map((_, i) => (
+          {recentActivity.map((activity, i) => (
             <div key={i} className="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors group">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold">
-                  JS
+                  {activity.userName?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="font-bold">João Silva</div>
-                  <div className="text-xs text-gray-500">Quadra 01 • Hoje às 18:00</div>
+                  <div className="font-bold">{activity.userName}</div>
+                  <div className="text-xs text-gray-500">{activity.courtName} • {activity.time}</div>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <div className="font-bold text-neon">R$ 120,00</div>
-                  <div className="text-[10px] uppercase tracking-widest text-green-500">Pago</div>
+                  <div className="font-bold text-neon">{formatCurrency(activity.amount)}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-green-500">{activity.status}</div>
                 </div>
                 <button className="p-2 text-gray-500 hover:text-white transition-colors">
                   <MoreVertical size={20} />
@@ -158,12 +210,13 @@ export const Dashboard = () => {
               </div>
             </div>
           ))}
+          {recentActivity.length === 0 && (
+            <div className="py-12 text-center text-gray-500">
+              Nenhuma atividade registrada ainda.
+            </div>
+          )}
         </div>
       </GlassCard>
     </div>
   );
 };
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}

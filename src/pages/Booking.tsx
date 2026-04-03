@@ -35,13 +35,85 @@ export const BookingPage = () => {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 minutes in seconds
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   // Reset payment data when selection changes
   useEffect(() => {
     setPixData(null);
     setBookingId(null);
     setPaymentStatus(null);
+    setTimeLeft(1800);
+    setAppliedCoupon(null);
+    setCouponCode('');
   }, [selectedCourt, selectedDate, selectedTime, duration]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setLoading(true);
+    setCouponError(null);
+    try {
+      const q = query(
+        collection(db, 'tenants', 'main-ct', 'coupons'),
+        where('code', '==', couponCode.toUpperCase()),
+        where('status', '==', 'active')
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        setCouponError('Cupom inválido ou expirado.');
+        setAppliedCoupon(null);
+      } else {
+        const couponData = snapshot.docs[0].data();
+        // Check expiry
+        if (couponData.expiryDate && new Date(couponData.expiryDate) < new Date()) {
+          setCouponError('Este cupom expirou.');
+          setAppliedCoupon(null);
+        } else if (couponData.usageCount >= couponData.usageLimit) {
+          setCouponError('Este cupom atingiu o limite de uso.');
+          setAppliedCoupon(null);
+        } else {
+          setAppliedCoupon({ id: snapshot.docs[0].id, ...couponData });
+          setCouponError(null);
+          // Recalculate payment if already generated? 
+          // Actually, it's better to apply coupon BEFORE generating PIX.
+          // So if a coupon is applied, we reset pixData.
+          setPixData(null);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      setCouponError('Erro ao validar cupom.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateTotal = () => {
+    const base = (selectedCourt?.basePrice || 0) * duration;
+    if (!appliedCoupon) return base;
+    
+    if (appliedCoupon.type === 'percentage') {
+      return base * (1 - appliedCoupon.value / 100);
+    } else {
+      return Math.max(0, base - appliedCoupon.value);
+    }
+  };
+
+  // Countdown timer for payment
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === 3 && timeLeft > 0 && paymentStatus !== 'approved') {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && step === 3) {
+      setStatusMessage("Tempo de pagamento expirado. A reserva foi cancelada.");
+      setStep(1);
+    }
+    return () => clearInterval(timer);
+  }, [step, timeLeft, paymentStatus]);
 
   useEffect(() => {
     if (statusMessage) {
@@ -52,6 +124,13 @@ export const BookingPage = () => {
 
   useEffect(() => {
     const fetchCourts = async () => {
+      // Cleanup expired bookings first
+      try {
+        fetch('/api/bookings/cleanup', { method: 'POST' });
+      } catch (e) {
+        console.error("Cleanup failed", e);
+      }
+
       // For demo, we'll use a hardcoded tenantId or fetch the first one
       const courtsSnapshot = await getDocs(collection(db, 'tenants', 'main-ct', 'courts'));
       const courtsData = courtsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Court));
@@ -59,9 +138,33 @@ export const BookingPage = () => {
       if (courtsData.length === 0) {
         // Seed some data if empty
         setCourts([
-          { id: '1', tenantId: 'main-ct', name: 'Quadra 1', description: 'Quadra de areia', basePrice: 1, images: [], active: true },
-          { id: '2', tenantId: 'main-ct', name: 'Quadra 2', description: 'Quadra de areia', basePrice: 1, images: [], active: true },
-          { id: '3', tenantId: 'main-ct', name: 'Quadra 3', description: 'Quadra de areia', basePrice: 1, images: [], active: true },
+          { 
+            id: '1', 
+            tenantId: 'main-ct', 
+            name: 'Quadra 1 - Futvôlei', 
+            description: 'Quadra profissional de areia para a prática de futvôlei de alto nível.', 
+            basePrice: 80, 
+            images: ['https://images.unsplash.com/photo-1593787424264-3a95c8d7a3eb?q=80&w=800&auto=format&fit=crop'], 
+            active: true 
+          },
+          { 
+            id: '2', 
+            tenantId: 'main-ct', 
+            name: 'Quadra 2 - Beach Tennis', 
+            description: 'Quadra oficial de areia para Beach Tennis com iluminação LED.', 
+            basePrice: 60, 
+            images: ['https://images.unsplash.com/photo-1616611751333-31627914876b?q=80&w=800&auto=format&fit=crop'], 
+            active: true 
+          },
+          { 
+            id: '3', 
+            tenantId: 'main-ct', 
+            name: 'Quadra 3 - Vôlei de Areia', 
+            description: 'Quadra de areia versátil para vôlei de praia e treinamentos funcionais.', 
+            basePrice: 70, 
+            images: ['https://images.unsplash.com/photo-1519766304817-4f37bda74a26?q=80&w=800&auto=format&fit=crop'], 
+            active: true 
+          },
         ]);
       } else {
         setCourts(courtsData);
@@ -110,8 +213,9 @@ export const BookingPage = () => {
             endTime.setMinutes(startTime.getMinutes() + 30);
           }
 
-          const totalPrice = Number((selectedCourt.basePrice * duration).toFixed(2));
-          console.log(`Calculated Total Price: ${totalPrice} (Base: ${selectedCourt.basePrice}, Duration: ${duration})`);
+          const basePrice = Number(selectedCourt.basePrice);
+          const totalPrice = Number(calculateTotal().toFixed(2));
+          console.log(`Calculated Total Price: ${totalPrice} (Base: ${basePrice}, Duration: ${duration}, Coupon: ${appliedCoupon?.code})`);
 
           const docRef = await addDoc(collection(db, 'tenants', 'main-ct', 'bookings'), {
             tenantId: 'main-ct',
@@ -122,6 +226,8 @@ export const BookingPage = () => {
             endTime: endTime.toISOString(),
             status: 'pending',
             totalPrice: totalPrice,
+            couponId: appliedCoupon?.id || null,
+            couponCode: appliedCoupon?.code || null,
             createdAt: new Date().toISOString()
           });
           
@@ -197,6 +303,12 @@ export const BookingPage = () => {
     '20:00', '21:00', '22:00'
   ];
 
+  const formatTimeLeft = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleBooking = async () => {
     if (!selectedCourt || !selectedTime || !auth.currentUser) return;
 
@@ -212,7 +324,7 @@ export const BookingPage = () => {
         endTime.setMinutes(startTime.getMinutes() + 30);
       }
 
-      const totalPrice = Number((selectedCourt.basePrice * duration).toFixed(2));
+      const totalPrice = Number(calculateTotal().toFixed(2));
 
       if (bookingId) {
         // Update existing booking
@@ -224,9 +336,18 @@ export const BookingPage = () => {
           pixQrCodeBase64: pixData?.qrCodeBase64 || null,
           totalPrice: totalPrice, // Update price just in case
         });
+
+        // Increment coupon usage if confirmed
+        if (paymentStatus === 'approved' && appliedCoupon) {
+          const couponRef = doc(db, 'tenants', 'main-ct', 'coupons', appliedCoupon.id);
+          const currentUsage = appliedCoupon.usageCount || 0;
+          await updateDoc(couponRef, {
+            usageCount: currentUsage + 1
+          });
+        }
       } else {
         // Fallback: Create new booking (should not happen in normal flow now)
-        await addDoc(collection(db, 'tenants', 'main-ct', 'bookings'), {
+        const docRef = await addDoc(collection(db, 'tenants', 'main-ct', 'bookings'), {
           tenantId: 'main-ct',
           courtId: selectedCourt.id,
           userId: auth.currentUser.uid,
@@ -235,11 +356,22 @@ export const BookingPage = () => {
           endTime: endTime.toISOString(),
           status: paymentStatus === 'approved' ? 'confirmed' : 'pending',
           totalPrice: totalPrice,
+          couponId: appliedCoupon?.id || null,
+          couponCode: appliedCoupon?.code || null,
           mercadopagoPaymentId: pixData?.id || null,
           pixCopyPaste: pixData?.copyPaste || generatePixPayload(),
           pixQrCodeBase64: pixData?.qrCodeBase64 || null,
           createdAt: new Date().toISOString()
         });
+
+        // Increment coupon usage if confirmed
+        if (paymentStatus === 'approved' && appliedCoupon) {
+          const couponRef = doc(db, 'tenants', 'main-ct', 'coupons', appliedCoupon.id);
+          const currentUsage = appliedCoupon.usageCount || 0;
+          await updateDoc(couponRef, {
+            usageCount: currentUsage + 1
+          });
+        }
       }
 
       setStep(4); // Success
@@ -261,7 +393,7 @@ export const BookingPage = () => {
     const part4 = "5303986"; // Transaction Currency (986 = BRL)
     const part5 = `54${amountStr.length.toString().padStart(2, '0')}${amountStr}`; // Transaction Amount
     const part6 = "5802BR"; // Country Code
-    const part7 = "5913Crossbol Manager"; // Merchant Name
+    const part7 = "5913CT Crossbol"; // Merchant Name
     const part8 = "6009SAO PAULO"; // Merchant City
     const part9 = "62070503***"; // Additional Data Field Template
     const part10 = "6304"; // CRC16 Indicator
@@ -374,8 +506,18 @@ export const BookingPage = () => {
                   setStep(2);
                 }}
               >
-                <div className="aspect-video bg-white/5 rounded-xl mb-4 flex items-center justify-center overflow-hidden">
-                  <Dribbble size={48} className="text-white/10" />
+                <div className="aspect-video bg-white/5 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
+                  {court.images && court.images.length > 0 ? (
+                    <img 
+                      src={court.images[0]} 
+                      alt={court.name} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <Dribbble size={48} className="text-white/10" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">{court.name}</h3>
                 <p className="text-sm text-gray-400 mb-4 line-clamp-2">{court.description}</p>
@@ -580,12 +722,45 @@ export const BookingPage = () => {
                 <div>
                   <h2 className="text-2xl font-bold mb-1">Resumo da Reserva</h2>
                   <p className="text-gray-400">{selectedCourt?.name}</p>
+                  <p className="text-sm text-neon mt-1">Atleta: {auth.currentUser?.displayName || 'Usuário'}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-neon font-black text-2xl">{formatCurrency((selectedCourt?.basePrice || 0) * duration)}</div>
+                  <div className="text-neon font-black text-2xl">{formatCurrency(calculateTotal())}</div>
+                  {appliedCoupon && (
+                    <p className="text-[10px] text-green-500 font-bold uppercase">Cupom Aplicado: {appliedCoupon.code}</p>
+                  )}
                   <p className="text-xs text-gray-500">Total a pagar</p>
+                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold border border-red-500/30">
+                    <Clock size={12} />
+                    Expira em: {formatTimeLeft(timeLeft)}
+                  </div>
                 </div>
               </div>
+
+              {/* Coupon Section */}
+              {!pixData && (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-400 uppercase tracking-widest">Cupom de Desconto</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="CÓDIGO"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-neon outline-none transition-all"
+                    />
+                    <button 
+                      onClick={handleApplyCoupon}
+                      disabled={loading || !couponCode}
+                      className="px-6 py-3 bg-white/10 hover:bg-neon hover:text-black rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                  {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                  {appliedCoupon && <p className="text-xs text-green-500">Desconto de {appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}%` : formatCurrency(appliedCoupon.value)} aplicado!</p>}
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4 p-4 glass border-white/10">
@@ -609,8 +784,11 @@ export const BookingPage = () => {
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-6 glass border-neon/50 bg-neon/5 flex flex-col items-center gap-4 text-center">
                     <div className="w-48 h-48 bg-white p-2 rounded-xl flex items-center justify-center">
-                      {loading && !pixData ? (
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon"></div>
+                      {loading || !pixData ? (
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon"></div>
+                          <p className="text-[10px] text-black font-bold uppercase">Gerando PIX...</p>
+                        </div>
                       ) : pixData?.qrCodeBase64 ? (
                         <img 
                           src={pixData.qrCodeBase64.startsWith('data:') ? pixData.qrCodeBase64 : `data:image/png;base64,${pixData.qrCodeBase64}`} 
@@ -618,16 +796,14 @@ export const BookingPage = () => {
                           className="w-full h-full"
                         />
                       ) : (
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatePixPayload())}`} 
-                          alt="QR Code PIX Fallback"
-                          className="w-full h-full opacity-50"
-                        />
+                        <div className="text-black text-xs text-center p-4">
+                          Erro ao carregar QR Code. Tente novamente.
+                        </div>
                       )}
                     </div>
                     <div className="space-y-2 w-full">
                       <p className="text-xs text-gray-400 uppercase tracking-widest">
-                        {paymentStatus === 'approved' ? 'Pagamento Aprovado!' : pixData ? 'Escaneie o QR Code acima ou copie o código' : 'Gerando PIX... (Usando fallback se necessário)'}
+                        {paymentStatus === 'approved' ? 'Pagamento Aprovado!' : pixData ? 'Escaneie o QR Code acima ou copie o código' : 'Aguarde a geração do PIX...'}
                       </p>
                       {paymentStatus === 'approved' && (
                         <div className="flex items-center justify-center gap-2 text-green-500 font-bold">
@@ -638,14 +814,17 @@ export const BookingPage = () => {
                       <div className="flex gap-2">
                         <input 
                           readOnly 
-                          value={pixData?.copyPaste || generatePixPayload()} 
+                          value={pixData?.copyPaste || ''} 
+                          placeholder="Gerando código..."
                           className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono outline-none"
                         />
                         <button 
-                          onClick={() => copyToClipboard(pixData?.copyPaste || generatePixPayload())}
+                          disabled={!pixData}
+                          onClick={() => pixData && copyToClipboard(pixData.copyPaste)}
                           className={cn(
                             "px-4 py-2 rounded-lg text-xs font-bold transition-all min-w-[80px]",
-                            copied ? "bg-green-500 text-white" : "bg-neon text-black"
+                            copied ? "bg-green-500 text-white" : "bg-neon text-black",
+                            !pixData && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           {copied ? 'Copiado!' : 'Copiar'}
